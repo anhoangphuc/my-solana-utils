@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import {
@@ -114,6 +114,7 @@ const WalletConnection = () => {
               borderRadius: "30px",
             }}
           >
+            <DialogTitle>Connect Wallet</DialogTitle>
             <div className="flex w-full justify-center items-center ">
               <div className="flex flex-col justify-start items-center space-y-5  w-[300px] md:w-[400px] overflow-y-auto ">
                 {wallets.map((wallet) => (
