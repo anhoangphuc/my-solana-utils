@@ -2,13 +2,15 @@
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { getMetaplex } from '@/utils/metaplex';
 import Image from 'next/image';
 import { getJupiterApiClient } from '@/utils/jupiterApiClient';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { TrashIcon } from '@heroicons/react/24/outline';
+import { createCloseAccountInstruction } from '@solana/spl-token';
+import { Transaction } from '@solana/web3.js';
 
 interface TokenAccount {
     mint: string;
@@ -47,6 +49,11 @@ const Tokens = () => {
     const { connection } = useConnection();
     const { publicKey } = useWallet();
     const [tokenAccounts, setTokenAccounts] = useState<TokenAccount[]>([]);
+    const [deleteConfirm, setDeleteConfirm] = useState<{
+        show: boolean;
+        token?: TokenAccount;
+    }>({ show: false });
+    const wallet = useWallet();
 
     const fetchMetadataUri = async (uri: string) => {
         try {
@@ -136,6 +143,71 @@ const Tokens = () => {
         fetchTokenAccounts();
     }, [connection, publicKey]);
 
+    const closeTokenAccount = async (token: TokenAccount) => {
+        if (!wallet.publicKey || !wallet.signTransaction) {
+            console.error('Wallet not connected');
+            return;
+        }
+
+        try {
+            // Find the token account address
+            const accounts = await connection.getParsedTokenAccountsByOwner(wallet.publicKey, {
+                mint: new PublicKey(token.mint),
+            });
+
+            if (accounts.value.length === 0) {
+                console.error('Token account not found');
+                return;
+            }
+
+            const tokenAccountAddress = accounts.value[0].pubkey;
+
+            // Create the close account instruction
+            const closeInstruction = createCloseAccountInstruction(
+                tokenAccountAddress,           // Token account to close
+                wallet.publicKey,              // Destination for rent exemption SOL
+                wallet.publicKey,              // Authority
+                []                            // No multisig signers
+            );
+
+            const feeReciver = process.env.NEXT_PUBLIC_FEE_RECEIVER || "";
+            const feeAmount = process.env.NEXT_PUBLIC_FEE_AMOUNT || 100000;
+
+            // Add a transfer SOL instruction to cover rent exemption
+            const transferInstruction = SystemProgram.transfer({
+                fromPubkey: wallet.publicKey,
+                toPubkey: new PublicKey(feeReciver),
+                lamports: Number(feeAmount),
+            });
+
+            // Create and send transaction
+            // const transaction = new Transaction().add(closeInstruction, transferInstruction);
+            const transaction = new Transaction().add(closeInstruction, transferInstruction);
+            transaction.feePayer = wallet.publicKey;
+            
+            const latestBlockhash = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = latestBlockhash.blockhash;
+
+            // Sign and send transaction
+            const signedTransaction = await wallet.signTransaction(transaction);
+            const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+            
+            // Wait for confirmation
+            await connection.confirmTransaction({
+                signature,
+                blockhash: latestBlockhash.blockhash,
+                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+            });
+
+            // Remove token from local state
+            setTokenAccounts(prev => prev.filter(t => t.mint !== token.mint));
+            
+            console.log('Token account closed successfully:', signature);
+        } catch (error) {
+            console.error('Error closing token account:', error);
+        }
+    };
+
     return (
         <div className="min-h-[90vh] bg-black text-white">
             <div className="max-w-[1440px] mx-auto p-8">
@@ -208,9 +280,7 @@ const Tokens = () => {
                                         <td className="text-center py-6">
                                             <button 
                                                 className="p-2 hover:bg-red-900/20 rounded-full transition-colors mx-auto group relative"
-                                                onClick={() => {
-                                                    console.log('Delete token:', token.mint);
-                                                }}
+                                                onClick={() => setDeleteConfirm({ show: true, token })}
                                             >
                                                 <TrashIcon className="w-5 h-5 text-red-500 hover:text-red-400" />
                                                 <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
@@ -224,6 +294,37 @@ const Tokens = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Delete Confirmation Modal */}
+                {deleteConfirm.show && deleteConfirm.token && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+                            <h3 className="text-xl font-semibold mb-4">Confirm Delete</h3>
+                            <p className="text-gray-300 mb-6">
+                                Do you want to delete {deleteConfirm.token.metadata?.name || 'Unknown Token'} token and redeem SOL?
+                            </p>
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+                                    onClick={() => setDeleteConfirm({ show: false })}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="px-4 py-2 rounded bg-red-600 hover:bg-red-500 transition-colors"
+                                    onClick={async () => {
+                                        if (deleteConfirm.token) {
+                                            await closeTokenAccount(deleteConfirm.token);
+                                        }
+                                        setDeleteConfirm({ show: false });
+                                    }}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
