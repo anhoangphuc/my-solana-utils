@@ -94,6 +94,7 @@ const Tokens = () => {
     const [selectedTokens, setSelectedTokens] = useState<Set<TokenAccount>>(new Set());
     const [isLoading, setIsLoading] = useState(true);
     const [hideUnzeroBalance, setHideUnzeroBalance] = useState(false);
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
 
     const fetchMetadataUri = async (uri: string) => {
         try {
@@ -350,74 +351,100 @@ const Tokens = () => {
                 {/* Fixed header section - darker gradient background */}
                 <div className="fixed top-[10vh] left-0 right-0 bg-gradient-to-b from-[#0B0A1A] to-[#070B19] z-40 border-b border-[#1C1C33]">
                     <div className="max-w-[1440px] mx-auto px-8">
-                        <div className="flex justify-between items-start py-6">
-                            {/* Left side with title and toggle in column layout */}
-                            <div className="flex flex-col gap-4">
-                                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
-                                    Your Token Accounts
-                                </h2>
-                                
-                                {/* Toggle moved below title */}
-                                <div className="flex items-center gap-2">
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="sr-only peer"
-                                            checked={hideUnzeroBalance}
-                                            onChange={(e) => setHideUnzeroBalance(e.target.checked)}
-                                        />
-                                        <div className="w-11 h-6 bg-[#1C1C33] peer-focus:outline-none rounded-full peer 
-                                            peer-checked:after:translate-x-full peer-checked:after:border-white 
-                                            after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
-                                            after:bg-gray-400 after:rounded-full after:h-5 after:w-5 
-                                            after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white">
-                                        </div>
-                                    </label>
-                                    <span className="text-sm text-gray-400">
-                                        Hide unzero balance
-                                    </span>
+                        <div className="flex flex-col gap-4 py-6">
+                            {/* Title and toggle row */}
+                            <div className="flex justify-between items-center">
+                                <div className="flex flex-col gap-4">
+                                    <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
+                                        Your Token Accounts
+                                    </h2>
+                                    
+                                    <div className="flex items-center gap-2">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={hideUnzeroBalance}
+                                                onChange={(e) => setHideUnzeroBalance(e.target.checked)}
+                                            />
+                                            <div className="w-11 h-6 bg-[#1C1C33] peer-focus:outline-none rounded-full peer 
+                                                peer-checked:after:translate-x-full peer-checked:after:border-white 
+                                                after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+                                                after:bg-gray-400 after:rounded-full after:h-5 after:w-5 
+                                                after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white">
+                                            </div>
+                                        </label>
+                                        <span className="text-sm text-gray-400">
+                                            Hide unzero balance
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Delete button */}
-                            {selectedTokens.size > 0 && (
-                                <button
-                                    onClick={() => closeMultipleTokenAccounts(Array.from(selectedTokens))}
-                                    disabled={isProcessing}
-                                    className={`flex items-center gap-2 px-4 py-2 ${
-                                        isProcessing 
-                                            ? 'bg-opacity-50 cursor-not-allowed' 
-                                            : 'hover:bg-opacity-80'
-                                    } bg-gradient-to-r from-indigo-600 to-blue-600 transition-all duration-200 rounded-lg text-white`}
-                                >
-                                    {isProcessing ? (
-                                        <>
-                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                                <circle 
-                                                    className="opacity-25" 
-                                                    cx="12" 
-                                                    cy="12" 
-                                                    r="10" 
-                                                    stroke="currentColor" 
-                                                    strokeWidth="4"
-                                                    fill="none"
-                                                />
-                                                <path 
-                                                    className="opacity-75" 
-                                                    fill="currentColor" 
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                />
-                                            </svg>
-                                            <span>Processing...</span>
-                                        </>
+                                {/* Action buttons */}
+                                <div className="flex items-center gap-4">
+                                    {!isSelectionMode ? (
+                                        <button
+                                            onClick={() => setIsSelectionMode(true)}
+                                            className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 
+                                                hover:from-indigo-600 hover:to-blue-600 transition-all duration-200 
+                                                rounded-lg text-white font-medium"
+                                        >
+                                            Delete multiple
+                                        </button>
                                     ) : (
                                         <>
-                                            <TrashIcon className="w-5 h-5" />
-                                            <span>Delete Token Accounts ({selectedTokens.size})</span>
+                                            <button
+                                                onClick={() => {
+                                                    setIsSelectionMode(false);
+                                                    setSelectedTokens(new Set());
+                                                }}
+                                                className="px-4 py-2 bg-[#1C1C33] hover:bg-[#2C2C43] 
+                                                    transition-colors rounded-lg text-white font-medium border border-[#2C2C43]"
+                                            >
+                                                Cancel
+                                            </button>
+                                            {selectedTokens.size > 0 && (
+                                                <button
+                                                    onClick={() => closeMultipleTokenAccounts(Array.from(selectedTokens))}
+                                                    disabled={isProcessing}
+                                                    className={`flex items-center gap-2 px-4 py-2 ${
+                                                        isProcessing 
+                                                            ? 'bg-opacity-50 cursor-not-allowed' 
+                                                            : 'hover:bg-opacity-80'
+                                                    } bg-gradient-to-r from-red-600 to-red-500 transition-all duration-200 rounded-lg text-white`}
+                                                >
+                                                    {isProcessing ? (
+                                                        <>
+                                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                                <circle 
+                                                                    className="opacity-25" 
+                                                                    cx="12" 
+                                                                    cy="12" 
+                                                                    r="10" 
+                                                                    stroke="currentColor" 
+                                                                    strokeWidth="4"
+                                                                    fill="none"
+                                                                />
+                                                                <path 
+                                                                    className="opacity-75" 
+                                                                    fill="currentColor" 
+                                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                />
+                                                            </svg>
+                                                            <span>Processing...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <TrashIcon className="w-5 h-5" />
+                                                            <span>Delete Token Accounts ({selectedTokens.size})</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
                                         </>
                                     )}
-                                </button>
-                            )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -584,12 +611,14 @@ const Tokens = () => {
                                                         </span>
                                                     </a>
 
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={Array.from(selectedTokens).some(t => t.mint === token.mint)}
-                                                        onChange={() => toggleTokenSelection(token)}
-                                                        className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-700 cursor-pointer"
-                                                    />
+                                                    {isSelectionMode && (
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Array.from(selectedTokens).some(t => t.mint === token.mint)}
+                                                            onChange={() => toggleTokenSelection(token)}
+                                                            className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-700 cursor-pointer"
+                                                        />
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
