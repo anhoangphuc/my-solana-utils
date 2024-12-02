@@ -324,12 +324,11 @@ const Tokens = () => {
                             {/* Table Header */}
                             <thead>
                                 <tr className="border-b border-gray-700">
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[40%]">Token</th>
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[20%]">Amount</th>
-                                    <th className="text-right pb-4 font-medium text-gray-400 w-[15%]">Price</th>
-                                    <th className="text-right pb-4 font-medium text-gray-400 w-[15%]">Total</th>
-                                    <th className="pb-4 w-[10%]"></th>
-                                    <th className="pb-4 w-[5%]"></th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[40%] border-r border-gray-700">Token</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[20%] border-r border-gray-700 pl-4">Amount</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-gray-700 pl-4">Price</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-gray-700 pl-4">Total</th>
+                                    <th className="pb-4 w-[10%] text-center">Actions</th>
                                 </tr>
                             </thead>
 
@@ -350,7 +349,7 @@ const Tokens = () => {
                                                 }
                                             `}
                                         >
-                                            <td className="py-6">
+                                            <td className="py-6 border-r border-gray-700/50">
                                                 <div className="flex items-center gap-4">
                                                     {token.metadata?.imageUrl && (
                                                         <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
@@ -372,45 +371,45 @@ const Tokens = () => {
                                                 </div>
                                             </td>
 
-                                            <td className="py-6">
-                                                <p className="font-bold text-xl">{token.amount}</p>
+                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
+                                                <p className="font-bold text-xl">{token.amount.toFixed(2)}</p>
                                             </td>
 
-                                            <td className="text-right py-6">
+                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
                                                 {token.price && (
-                                                    <p className="font-semibold text-green-400 flex justify-end items-baseline">
+                                                    <p className="font-semibold text-green-400">
                                                         {formatPrice(token.price)}
                                                     </p>
                                                 )}
                                             </td>
 
-                                            <td className="text-right py-6">
+                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
                                                 {token.price && (
-                                                    <p className="font-semibold text-green-400 flex justify-end items-baseline">
+                                                    <p className="font-semibold text-green-400">
                                                         {formatPrice(token.price * token.amount)}
                                                     </p>
                                                 )}
                                             </td>
 
                                             <td className="text-center py-6">
-                                                <button 
-                                                    className="p-2 hover:bg-red-900/20 rounded-full transition-colors mx-auto group relative"
-                                                    onClick={() => setDeleteConfirm({ show: true, token })}
-                                                >
-                                                    <TrashIcon className="w-5 h-5 text-red-500 hover:text-red-400" />
-                                                    <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                                        Delete Token Account and redeem SOL
-                                                    </span>
-                                                </button>
-                                            </td>
+                                                <div className="flex items-center justify-center gap-4">
+                                                    <button 
+                                                        className="p-2 hover:bg-red-900/20 rounded-full transition-colors group relative"
+                                                        onClick={() => setDeleteConfirm({ show: true, token })}
+                                                    >
+                                                        <TrashIcon className="w-5 h-5 text-red-500 hover:text-red-400" />
+                                                        <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                                            Delete Token Account and redeem SOL
+                                                        </span>
+                                                    </button>
 
-                                            <td className="text-center py-6">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={Array.from(selectedTokens).some(t => t.mint === token.mint)}
-                                                    onChange={() => toggleTokenSelection(token)}
-                                                    className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-700 cursor-pointer"
-                                                />
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={Array.from(selectedTokens).some(t => t.mint === token.mint)}
+                                                        onChange={() => toggleTokenSelection(token)}
+                                                        className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-700 cursor-pointer"
+                                                    />
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
