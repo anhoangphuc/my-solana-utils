@@ -93,6 +93,7 @@ const Tokens = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedTokens, setSelectedTokens] = useState<Set<TokenAccount>>(new Set());
     const [isLoading, setIsLoading] = useState(true);
+    const [hideUnzeroBalance, setHideUnzeroBalance] = useState(false);
 
     const fetchMetadataUri = async (uri: string) => {
         try {
@@ -338,17 +339,47 @@ const Tokens = () => {
         });
     };
 
+    const filteredTokenAccounts = tokenAccounts.filter(token => {
+        if (!hideUnzeroBalance) return true;
+        return (token.price || 0) * token.amount === 0;
+    });
+
     return (
         <>
             <div className="min-h-[90vh] bg-[#0B0A1A] text-white">
                 {/* Fixed header section - darker gradient background */}
                 <div className="fixed top-[10vh] left-0 right-0 bg-gradient-to-b from-[#0B0A1A] to-[#070B19] z-40 border-b border-[#1C1C33]">
                     <div className="max-w-[1440px] mx-auto px-8">
-                        <div className="flex justify-between items-center py-6">
-                            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
-                                Your Token Accounts
-                            </h2>
-                            
+                        <div className="flex justify-between items-start py-6">
+                            {/* Left side with title and toggle in column layout */}
+                            <div className="flex flex-col gap-4">
+                                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
+                                    Your Token Accounts
+                                </h2>
+                                
+                                {/* Toggle moved below title */}
+                                <div className="flex items-center gap-2">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={hideUnzeroBalance}
+                                            onChange={(e) => setHideUnzeroBalance(e.target.checked)}
+                                        />
+                                        <div className="w-11 h-6 bg-[#1C1C33] peer-focus:outline-none rounded-full peer 
+                                            peer-checked:after:translate-x-full peer-checked:after:border-white 
+                                            after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+                                            after:bg-gray-400 after:rounded-full after:h-5 after:w-5 
+                                            after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white">
+                                        </div>
+                                    </label>
+                                    <span className="text-sm text-gray-400">
+                                        Hide unzero balance
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Delete button */}
                             {selectedTokens.size > 0 && (
                                 <button
                                     onClick={() => closeMultipleTokenAccounts(Array.from(selectedTokens))}
@@ -432,12 +463,14 @@ const Tokens = () => {
                                             </div>
                                         </td>
                                     </tr>
-                                ) : tokenAccounts.length === 0 ? (
+                                ) : filteredTokenAccounts.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="text-center py-4">No tokens found</td>
+                                        <td colSpan={5} className="text-center py-4">
+                                            {hideUnzeroBalance ? "No tokens with value found" : "No tokens found"}
+                                        </td>
                                     </tr>
                                 ) : (
-                                    tokenAccounts.map((token, index) => (
+                                    filteredTokenAccounts.map((token, index) => (
                                         <tr 
                                             key={index} 
                                             className={`border-b border-[#1C1C33]/50 transition-colors duration-200
