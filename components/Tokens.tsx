@@ -352,9 +352,9 @@ const Tokens = () => {
     return (
         <>
             <div className="min-h-[90vh] bg-[#0B0A1A] text-white">
-                {/* Fixed header section - darker gradient background */}
-                <div className="fixed top-[10vh] left-0 right-0 bg-gradient-to-b from-[#0B0A1A] to-[#070B19] z-40 border-b border-[#1C1C33]">
-                    <div className="max-w-[1440px] mx-auto px-8">
+                {/* Fixed header section */}
+                <div className="fixed top-[10vh] right-0 bg-gradient-to-b from-[#0B0A1A] to-[#070B19] z-40 border-b border-[#1C1C33] left-[200px] transition-all duration-300">
+                    <div className="px-8">
                         <div className="flex flex-col gap-4 py-6">
                             {/* Title and toggle row */}
                             <div className="flex justify-between items-center">
@@ -384,8 +384,9 @@ const Tokens = () => {
                                     </div>
                                 </div>
 
-                                {/* Action buttons */}
-                                <div className="flex items-center gap-4">
+                                {/* Action buttons - Add padding to match table header */}
+                                {/* <div className="flex items-center gap-4 pr-[calc(20%-0.75rem)]"> */}
+                                <div className="flex items-center gap-4 pr-[calc(5%)]">
                                     {!isSelectionMode ? (
                                         <button
                                             onClick={() => setIsSelectionMode(true)}
@@ -439,7 +440,7 @@ const Tokens = () => {
                                                     ) : (
                                                         <>
                                                             <TrashIcon className="w-5 h-5" />
-                                                            <span>Delete Token Accounts ({selectedTokens.size})</span>
+                                                            <span>Delete Accounts ({selectedTokens.size})</span>
                                                         </>
                                                     )}
                                                 </button>
@@ -453,7 +454,7 @@ const Tokens = () => {
                 </div>
 
                 {/* Table content */}
-                <div className="pt-[calc(10vh+80px)] max-w-[1440px] mx-auto px-8">
+                <div className="pt-[calc(10vh+80px)] px-8">
                     <div className="overflow-x-auto">
                         <table className="w-full table-fixed">
                             {/* Table Header */}
@@ -697,7 +698,6 @@ const Tokens = () => {
                     </div>
                 )}
             </div>
-            {/* Add Toaster component */}
             <Toaster position="bottom-right" />
         </>
     );

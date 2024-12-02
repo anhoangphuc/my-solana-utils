@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "../components/Header";
 import WalletContextProvider from "@/providers/WalletContextProvider";
+import Sidebar from "@/components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,9 +22,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <WalletContextProvider>
           <Header />
-          <main className="pt-[10vh]">
-            {children}
-          </main>
+          <div className="flex">
+            <Sidebar />
+            <main className="flex-1 transition-all duration-300 ml-[200px] pt-[10vh]">
+              {children}
+            </main>
+          </div>
         </WalletContextProvider>
       </body>
     </html>
