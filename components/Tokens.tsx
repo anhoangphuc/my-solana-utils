@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { getJupiterApiClient } from '@/utils/jupiterApiClient';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { TrashIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, ArrowTopRightOnSquareIcon, ArrowPathRoundedSquareIcon } from '@heroicons/react/24/outline';
 import { createCloseAccountInstruction } from '@solana/spl-token';
 import { Transaction } from '@solana/web3.js';
 import toast, { Toaster } from 'react-hot-toast';
@@ -31,9 +31,9 @@ interface TokenAccount {
 
 const formatPrice = (price: number) => {
     if (price === 0) return '$0.00';
-    
+
     const priceStr = price.toString();
-    
+
     // If price is less than 0.01
     if (price < 0.01) {
         // Count leading zeros after decimal point
@@ -45,7 +45,7 @@ const formatPrice = (price: number) => {
             return ['$0.0', <sub key="zeros">({leadingZeros})</sub>, significantDigits.slice(0, 3)];
         }
     }
-    
+
     return `$${price.toFixed(2)}`;
 };
 
@@ -80,6 +80,10 @@ const copyToClipboard = async (text: string) => {
         });
     }
 };
+
+const SwapIcon = () => (
+    <svg fill="#22C55E" width="24px" height="24px" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16 0c8.837 0 16 7.163 16 16s-7.163 16-16 16S0 24.837 0 16 7.163 0 16 0zm8.706 19.517H10.34a.59.59 0 00-.415.17l-2.838 2.815a.291.291 0 00.207.498H21.66a.59.59 0 00.415-.17l2.838-2.816a.291.291 0 00-.207-.497zm-3.046-5.292H7.294l-.068.007a.291.291 0 00-.14.49l2.84 2.816.07.06c.1.07.22.11.344.11h14.366l.068-.007a.291.291 0 00.14-.49l-2.84-2.816-.07-.06a.59.59 0 00-.344-.11zM24.706 9H10.34a.59.59 0 00-.415.17l-2.838 2.816a.291.291 0 00.207.497H21.66a.59.59 0 00.415-.17l2.838-2.815A.291.291 0 0024.706 9z" /></svg>
+);
 
 const Tokens = () => {
     const { connection } = useConnection();
@@ -201,7 +205,7 @@ const Tokens = () => {
                     if (aValue !== bValue) {
                         return aValue - bValue; // Descending order
                     }
-                    
+
                     // If total values are equal, sort by amount
                     return a.amount - b.amount; // Ascending order
                 });
@@ -226,7 +230,7 @@ const Tokens = () => {
         try {
             // Create a new transaction
             const transaction = new Transaction();
-            
+
             // Add close instruction for each token account
             for (const token of tokens) {
                 if (token.amount > 0) {
@@ -292,7 +296,7 @@ const Tokens = () => {
             toast.success(
                 <div>
                     Successfully closed {tokens.length} token accounts
-                    <a 
+                    <a
                         href={`${getTxLink(signature)}`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -358,7 +362,7 @@ const Tokens = () => {
                                     <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
                                         Your Token Accounts
                                     </h2>
-                                    
+
                                     <div className="flex items-center gap-2">
                                         <label className="relative inline-flex items-center cursor-pointer">
                                             <input
@@ -407,27 +411,26 @@ const Tokens = () => {
                                                 <button
                                                     onClick={() => closeMultipleTokenAccounts(Array.from(selectedTokens))}
                                                     disabled={isProcessing}
-                                                    className={`flex items-center gap-2 px-4 py-2 ${
-                                                        isProcessing 
-                                                            ? 'bg-opacity-50 cursor-not-allowed' 
+                                                    className={`flex items-center gap-2 px-4 py-2 ${isProcessing
+                                                            ? 'bg-opacity-50 cursor-not-allowed'
                                                             : 'hover:bg-opacity-80'
-                                                    } bg-gradient-to-r from-red-600 to-red-500 transition-all duration-200 rounded-lg text-white`}
+                                                        } bg-gradient-to-r from-red-600 to-red-500 transition-all duration-200 rounded-lg text-white`}
                                                 >
                                                     {isProcessing ? (
                                                         <>
                                                             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                                                <circle 
-                                                                    className="opacity-25" 
-                                                                    cx="12" 
-                                                                    cy="12" 
-                                                                    r="10" 
-                                                                    stroke="currentColor" 
+                                                                <circle
+                                                                    className="opacity-25"
+                                                                    cx="12"
+                                                                    cy="12"
+                                                                    r="10"
+                                                                    stroke="currentColor"
                                                                     strokeWidth="4"
                                                                     fill="none"
                                                                 />
-                                                                <path 
-                                                                    className="opacity-75" 
-                                                                    fill="currentColor" 
+                                                                <path
+                                                                    className="opacity-75"
+                                                                    fill="currentColor"
                                                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                                                 />
                                                             </svg>
@@ -471,18 +474,18 @@ const Tokens = () => {
                                         <td colSpan={5} className="text-center py-12">
                                             <div className="flex flex-col items-center gap-4">
                                                 <svg className="animate-spin h-8 w-8 text-blue-500" viewBox="0 0 24 24">
-                                                    <circle 
-                                                        className="opacity-25" 
-                                                        cx="12" 
-                                                        cy="12" 
-                                                        r="10" 
-                                                        stroke="currentColor" 
+                                                    <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
                                                         strokeWidth="4"
                                                         fill="none"
                                                     />
-                                                    <path 
-                                                        className="opacity-75" 
-                                                        fill="currentColor" 
+                                                    <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
                                                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                                     />
                                                 </svg>
@@ -498,11 +501,11 @@ const Tokens = () => {
                                     </tr>
                                 ) : (
                                     filteredTokenAccounts.map((token, index) => (
-                                        <tr 
-                                            key={index} 
+                                        <tr
+                                            key={index}
                                             className={`border-b border-[#1C1C33]/50 transition-colors duration-200
                                                 ${Array.from(selectedTokens).some(t => t.mint === token.mint)
-                                                    ? 'bg-[#1C1C33]/30 hover:bg-[#1C1C33]/40' 
+                                                    ? 'bg-[#1C1C33]/30 hover:bg-[#1C1C33]/40'
                                                     : 'hover:bg-[#1C1C33]/20'
                                                 }
                                             `}
@@ -512,7 +515,7 @@ const Tokens = () => {
                                                     {token.metadata?.imageUrl && isValidUrl(token.metadata.imageUrl) && (
                                                         <>
                                                             <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
-                                                                <Image 
+                                                                <Image
                                                                     src={token.metadata.imageUrl}
                                                                     alt={token.metadata?.name || 'Token'}
                                                                     fill
@@ -523,10 +526,10 @@ const Tokens = () => {
                                                     )}
                                                     <div className="min-w-0">
                                                         <p className="font-semibold truncate">
-                                                            {token.metadata?.name || 'Unknown Token'} 
+                                                            {token.metadata?.name || 'Unknown Token'}
                                                             {token.metadata?.symbol && ` (${token.metadata.symbol})`}
                                                         </p>
-                                                        <div 
+                                                        <div
                                                             className="relative group cursor-pointer"
                                                             onClick={() => copyToClipboard(token.mint)}
                                                         >
@@ -544,7 +547,7 @@ const Tokens = () => {
                                             </td>
 
                                             <td className="text-left py-6 border-r border-[#1C1C33]/50 pl-4">
-                                                <a 
+                                                <a
                                                     href={getRaydiumLink(token.mint)}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
@@ -563,7 +566,7 @@ const Tokens = () => {
 
                                             <td className="text-left py-6 border-r border-[#1C1C33]/50 pl-4">
                                                 {token.price && (
-                                                    <a 
+                                                    <a
                                                         href={getDexScreenerLink(token.mint)}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
@@ -589,7 +592,7 @@ const Tokens = () => {
 
                                             <td className="text-center py-6">
                                                 <div className="flex items-center justify-center gap-4">
-                                                    <button 
+                                                    <button
                                                         className="p-2 hover:bg-red-900/20 rounded-full transition-colors group relative"
                                                         onClick={() => setDeleteConfirm({ show: true, token })}
                                                     >
@@ -608,6 +611,18 @@ const Tokens = () => {
                                                         <ArrowTopRightOnSquareIcon className="w-5 h-5 text-blue-400 hover:text-blue-300" />
                                                         <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                                                             View on Solana Explorer
+                                                        </span>
+                                                    </a>
+
+                                                    <a
+                                                        href={getRaydiumLink(token.mint)}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="p-2 hover:bg-green-900/20 rounded-full transition-colors group relative"
+                                                    >
+                                                        <SwapIcon />
+                                                        <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                                            Swap on Raydium
                                                         </span>
                                                     </a>
 
@@ -646,11 +661,10 @@ const Tokens = () => {
                                     Cancel
                                 </button>
                                 <button
-                                    className={`px-4 py-2 rounded ${
-                                        isProcessing 
-                                            ? 'bg-opacity-50 cursor-not-allowed' 
+                                    className={`px-4 py-2 rounded ${isProcessing
+                                            ? 'bg-opacity-50 cursor-not-allowed'
                                             : 'hover:bg-opacity-80'
-                                    } bg-gradient-to-r from-indigo-600 to-blue-600 transition-all duration-200`}
+                                        } bg-gradient-to-r from-indigo-600 to-blue-600 transition-all duration-200`}
                                     onClick={async () => {
                                         if (deleteConfirm.token) {
                                             await closeMultipleTokenAccounts([deleteConfirm.token]);
@@ -662,18 +676,18 @@ const Tokens = () => {
                                     {isProcessing ? (
                                         <>
                                             <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                                <circle 
-                                                    className="opacity-25" 
-                                                    cx="12" 
-                                                    cy="12" 
-                                                    r="10" 
-                                                    stroke="currentColor" 
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
                                                     strokeWidth="4"
                                                     fill="none"
                                                 />
-                                                <path 
-                                                    className="opacity-75" 
-                                                    fill="currentColor" 
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
                                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                                 />
                                             </svg>

@@ -11,5 +11,5 @@ export function getDexScreenerLink(tokenAddress: string) {
 }
 
 export function getRaydiumLink(tokenAddress: string) {
-    return `https://raydium.io/swap/?inputMint=${tokenAddress}&outputMint=Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB`;
+    return `https://raydium.io/swap/?inputMint=${tokenAddress}&outputMint=sol`;
 }
