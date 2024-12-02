@@ -6,7 +6,8 @@ import {
     ChevronLeftIcon, 
     ChevronRightIcon,
     CircleStackIcon,
-    InformationCircleIcon 
+    InformationCircleIcon,
+    HomeIcon
 } from '@heroicons/react/24/outline';
 
 const Sidebar = () => {
@@ -14,6 +15,11 @@ const Sidebar = () => {
     const pathname = usePathname();
 
     const navItems = [
+        {
+            name: 'Home',
+            path: '/',
+            icon: HomeIcon
+        },
         {
             name: 'Tokens',
             path: '/tokens',

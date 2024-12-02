@@ -2,46 +2,60 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
+  const features = [
+    {
+      title: "Token Accounts",
+      description: "Manage, close your Token Accounts for SOL with ease",
+      icon: "/icons/token-management.png",
+      href: "/tokens"
+    },
+    {
+      title: "Snapshot",
+      description: "Get the list of Holders of any Token or NFT Collection any time",
+      icon: "/icons/snapshot.png",
+      href: "/snapshot"
+    },
+  ];
+
   return (
-    <div className="min-h-[90vh] bg-transparent text-white">
-      <div className="max-w-4xl mx-auto p-8">
-        <h1 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
-          Solana Tools for Everyone
+    <div className="min-h-[90vh] bg-[#0B0A1A] text-white">
+      <div className="max-w-7xl mx-auto p-8">
+        <h1 className="text-4xl font-bold text-center mb-16">
+          OUR MOST OUTSTANDING FEATURES
         </h1>
         
-        <div className="space-y-8">
-          <div className="glass-card hover:gradient-border transition-all duration-300">
-            <Link href="/tokens" className="block p-6">
-              <h2 className="text-2xl font-semibold mb-3 text-indigo-400">Token Account Manager</h2>
-              <p className="text-gray-300">
-                Efficiently manage your Solana token accounts. View token balances, prices, and total values. 
-                Clean up unused token accounts to recover SOL, and access quick links to trade on Raydium or 
-                view market data on DexScreener.
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {features.map((feature, index) => (
+            <Link 
+              key={index} 
+              href={feature.href}
+              className="block p-8 rounded-2xl bg-[#1C1C33]/30 hover:bg-[#1C1C33]/50 
+                transition-all duration-300 border border-[#2C2C43] hover:border-indigo-500/50"
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="relative w-32 h-32">
+                  <Image
+                    src={feature.icon}
+                    alt={feature.title}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <h2 className="text-2xl font-semibold">{feature.title}</h2>
+                <p className="text-gray-400">{feature.description}</p>
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      viewBox="0 0 20 20" 
+                      fill="currentColor" 
+                      className="w-5 h-5"
+                    >
+                      <path fillRule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clipRule="evenodd" />
+                    </svg>
+              </div>
             </Link>
-          </div>
-
-          {/* Add more tool cards here in the future */}
+          ))}
         </div>
       </div>
-
-      {/* Fixed About Link */}
-      <Link 
-        href="/about" 
-        className="fixed bottom-6 right-6 px-4 py-2 glass-card hover:gradient-border
-          transition-all duration-300 text-white font-medium
-          flex items-center gap-2"
-      >
-        <span>About</span>
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 20 20" 
-          fill="currentColor" 
-          className="w-5 h-5"
-        >
-          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
-        </svg>
-      </Link>
     </div>
   );
 }

@@ -86,8 +86,24 @@ const SwapIcon = () => (
 );
 
 // Utility function to format numbers with commas
-const formatNumberWithCommas = (number: number): string => {
-    return number.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatNumberWithCommas = (num: number): string => {
+    if (!num) return '0.00';
+    
+    // Handle numbers with more than 4 decimal places
+    if (num < 0.0001) {
+        return num.toExponential(4);
+    }
+    
+    // For regular numbers, format with commas and up to 4 decimal places
+    const parts = num.toFixed(4).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    
+    // Remove trailing zeros after decimal
+    if (parts[1]) {
+        parts[1] = parts[1].replace(/0+$/, '');
+    }
+    
+    return parts[1] ? parts.join('.') : parts[0];
 };
 
 const Tokens = () => {
@@ -147,15 +163,23 @@ const Tokens = () => {
     };
 
     useEffect(() => {
+        let mounted = true;
+
         const fetchTokenAccounts = async () => {
-            if (!publicKey) return;
+            if (!publicKey) {
+                setTokenAccounts([]);
+                return;
+            }
+            
             setIsLoading(true);
-            setIsMetadataLoaded(false); // Reset metadata loaded state
+            setIsMetadataLoaded(false);
 
             try {
-                const accounts = await connection.getParsedTokenAccountsByOwner(new PublicKey("CXHBvFcwNvRuaH3pRDKv8jnACAcn7Sd6TyLZkiSWCBwi"), {
+                const accounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
                     programId: TOKEN_PROGRAM_ID,
                 });
+
+                if (!mounted) return;
 
                 const tokens = accounts.value.map((account) => {
                     const parsedInfo = account.account.data.parsed.info;
@@ -164,15 +188,16 @@ const Tokens = () => {
                         amount: parsedInfo.tokenAmount.uiAmount,
                         decimals: parsedInfo.tokenAmount.decimals,
                         pubkey: account.pubkey.toBase58(),
-                        metadata: {}, // Initialize metadata as empty
-                        price: null,  // Initialize price as null
+                        metadata: {},
+                        price: null,
                     };
                 });
 
                 setTokenAccounts(tokens);
 
-                // Fetch metadata and price asynchronously
                 const metadataPromises = tokens.map(async (token, index) => {
+                    if (!mounted) return;
+
                     const mintAddress = new PublicKey(token.mint);
                     const metaplex = getMetaplex();
 
@@ -180,7 +205,6 @@ const Tokens = () => {
                     try {
                         const nft = await metaplex.nfts().findByMint({ mintAddress });
                         const imageUrl = nft.uri ? await fetchMetadataUri(nft.uri) : null;
-
                         metadata = {
                             name: nft.name,
                             symbol: nft.symbol,
@@ -195,9 +219,12 @@ const Tokens = () => {
                         try {
                             const response = await fetch(`/api/token-metadata?mint=${token.mint}`);
                             const tokenMetadata = await response.json();
-                            metadata.name = metadata.name || tokenMetadata.name;
-                            metadata.symbol = metadata.symbol || tokenMetadata.symbol;
-                            metadata.imageUrl = metadata.imageUrl || tokenMetadata.imageUrl;
+                            metadata = {
+                                ...metadata,
+                                name: metadata.name || tokenMetadata.name,
+                                symbol: metadata.symbol || tokenMetadata.symbol,
+                                imageUrl: metadata.imageUrl || tokenMetadata.imageUrl,
+                            };
                         } catch (error) {
                             console.log(`Error fetching token metadata from registry for ${token.mint}:`, error);
                         }
@@ -205,7 +232,8 @@ const Tokens = () => {
 
                     const price = await fetchTokenPrice(token.mint);
 
-                    // Update token account with metadata and price
+                    if (!mounted) return;
+
                     setTokenAccounts(prev => {
                         const updatedTokens = [...prev];
                         updatedTokens[index] = {
@@ -217,18 +245,29 @@ const Tokens = () => {
                     });
                 });
 
-                // Wait for all metadata to be fetched
                 await Promise.all(metadataPromises);
-                setIsMetadataLoaded(true); // Set metadata loaded state to true
+                if (mounted) {
+                    setIsMetadataLoaded(true);
+                }
 
             } catch (error) {
                 console.error('Error fetching token accounts:', error);
             } finally {
-                setIsLoading(false);
+                if (mounted) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchTokenAccounts();
+
+        return () => {
+            mounted = false;
+            setTokenAccounts([]);
+            setSelectedTokens(new Set());
+            setIsSelectionMode(false);
+            setDeleteConfirm({ show: false });
+        };
     }, [connection, publicKey]);
 
     const closeMultipleTokenAccounts = async (tokens: TokenAccount[]) => {
@@ -585,15 +624,28 @@ const Tokens = () => {
                                                             {token.metadata?.name || 'Unknown Token'}
                                                             {token.metadata?.symbol && ` (${token.metadata.symbol})`}
                                                         </p>
-                                                        <div className="relative group cursor-pointer truncate">
-                                                            <p className="font-mono text-sm text-gray-400 truncate">
-                                                                {token.mint}
-                                                            </p>
-                                                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-                                                                bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 
-                                                                group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                                                Click to copy token address
-                                                            </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="relative group cursor-pointer truncate">
+                                                                <p className="font-mono text-sm text-gray-400 truncate">
+                                                                    {token.mint}
+                                                                </p>
+                                                                <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+                                                                    bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 
+                                                                    group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                                    Click to copy token address
+                                                                </span>
+                                                            </div>
+                                                            <a
+                                                                href={getAddressLink(token.mint)}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-1.5 hover:bg-blue-900/20 rounded-full transition-colors group relative"
+                                                            >
+                                                                <ArrowTopRightOnSquareIcon className="w-4 h-4 text-blue-400 hover:text-blue-300" />
+                                                                <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                                                    View on Solana Explorer
+                                                                </span>
+                                                            </a>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -654,18 +706,6 @@ const Tokens = () => {
                                                             Close Account and redeem SOL
                                                         </span>
                                                     </button>
-
-                                                    <a
-                                                        href={getAddressLink(token.mint)}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="p-1.5 hover:bg-blue-900/20 rounded-full transition-colors group relative"
-                                                    >
-                                                        <ArrowTopRightOnSquareIcon className="w-4 h-4 text-blue-400 hover:text-blue-300" />
-                                                        <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                                            View on Solana Explorer
-                                                        </span>
-                                                    </a>
 
                                                     <a
                                                         href={getRaydiumLink(token.mint)}
