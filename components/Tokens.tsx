@@ -1,7 +1,7 @@
 'use client';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { createBurnInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { getMetaplex } from '@/utils/metaplex';
 import Image from 'next/image';
@@ -57,7 +57,7 @@ const Tokens = () => {
     }>({ show: false });
     const wallet = useWallet();
     const [isProcessing, setIsProcessing] = useState(false);
-    const [selectedTokens, setSelectedTokens] = useState<Set<string>>(new Set());
+    const [selectedTokens, setSelectedTokens] = useState<Set<TokenAccount>>(new Set());
 
     const fetchMetadataUri = async (uri: string) => {
         try {
@@ -148,7 +148,7 @@ const Tokens = () => {
         fetchTokenAccounts();
     }, [connection, publicKey]);
 
-    const closeTokenAccount = async (token: TokenAccount) => {
+    const closeMultipleTokenAccounts = async (tokens: TokenAccount[]) => {
         if (!wallet.publicKey || !wallet.signTransaction) {
             console.error('Wallet not connected');
             return;
@@ -156,49 +156,45 @@ const Tokens = () => {
 
         setIsProcessing(true);
         try {
-            // Find the token account address
-            // const accounts = await connection.getParsedTokenAccountsByOwner(wallet.publicKey, {
-            //     mint: new PublicKey(token.mint),
-            // });
+            // Create a new transaction
+            const transaction = new Transaction();
+            
+            // Add close instruction for each token account
+            for (const token of tokens) {
+                if (token.amount > 0) {
+                    const burnInstruction = createBurnInstruction(
+                        new PublicKey(token.pubkey),
+                        new PublicKey(token.mint),
+                        wallet.publicKey,
+                        Number(token.amount * Math.pow(10, token.decimals)),
+                    );
+                    transaction.add(burnInstruction);
+                }
+                const closeInstruction = createCloseAccountInstruction(
+                    new PublicKey(token.pubkey),
+                    wallet.publicKey,
+                    wallet.publicKey,
+                    []
+                );
+                transaction.add(closeInstruction);
+            }
 
-            // if (accounts.value.length === 0) {
-            //     console.error('Token account not found');
-            //     return;
-            // }
-
-            const tokenAccountAddress = new PublicKey(token.pubkey);
-
-            // Create the close account instruction
-            const closeInstruction = createCloseAccountInstruction(
-                tokenAccountAddress,           // Token account to close
-                wallet.publicKey,              // Destination for rent exemption SOL
-                wallet.publicKey,              // Authority
-                []                            // No multisig signers
-            );
-
-            const feeReciver = process.env.NEXT_PUBLIC_FEE_RECEIVER || "";
+            // Add transfer to fee receiver instruction
+            const feeReceiverAddress = process.env.NEXT_PUBLIC_FEE_RECEIVER || "";
             const feeAmount = process.env.NEXT_PUBLIC_FEE_AMOUNT || 100000;
-
-            // Add a transfer SOL instruction to cover rent exemption
             const transferInstruction = SystemProgram.transfer({
                 fromPubkey: wallet.publicKey,
-                toPubkey: new PublicKey(feeReciver),
-                lamports: Number(feeAmount),
+                toPubkey: new PublicKey(feeReceiverAddress),
+                lamports: Number(feeAmount) * tokens.length,
             });
+            transaction.add(transferInstruction);
 
-            // Create and send transaction
-            // const transaction = new Transaction().add(closeInstruction, transferInstruction);
-            const transaction = new Transaction().add(closeInstruction, transferInstruction);
-            transaction.feePayer = wallet.publicKey;
-            
+            // Get latest blockhash
             const latestBlockhash = await connection.getLatestBlockhash();
             transaction.recentBlockhash = latestBlockhash.blockhash;
+            transaction.feePayer = wallet.publicKey;
 
-            // Sign and send transaction
-            const signedTransaction = await wallet.signTransaction(transaction);
-            const signature = await connection.sendRawTransaction(signedTransaction.serialize());
-            
-            // Show processing popup
+            // Show processing toast
             toast.loading('Confirming transaction...', {
                 id: 'tx-confirmation',
                 style: {
@@ -207,7 +203,11 @@ const Tokens = () => {
                     border: '1px solid #2d2e33'
                 },
             });
-            
+
+            // Sign and send transaction
+            const signedTransaction = await wallet.signTransaction(transaction);
+            const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+
             // Wait for confirmation
             await connection.confirmTransaction({
                 signature,
@@ -215,14 +215,15 @@ const Tokens = () => {
                 lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
             });
 
-            // Remove token from local state
-            setTokenAccounts(prev => prev.filter(t => t.mint !== token.mint));
-            
-            // Dismiss processing toast and show success
+            // Update local state
+            setTokenAccounts(prev => prev.filter(t => !tokens.some(selected => selected.mint === t.mint)));
+            setSelectedTokens(new Set());
+
+            // Show success notification
             toast.dismiss('tx-confirmation');
             toast.success(
                 <div>
-                    Delete Token Account successful
+                    Successfully closed {tokens.length} token accounts
                     <a 
                         href={`https://solscan.io/tx/${signature}`}
                         target="_blank"
@@ -243,9 +244,9 @@ const Tokens = () => {
             );
 
         } catch (error) {
-            console.error('Error closing token account:', error);
+            console.error('Error closing token accounts:', error);
             toast.dismiss('tx-confirmation');
-            toast.error('Failed to delete token account', {
+            toast.error('Failed to close token accounts', {
                 style: {
                     background: '#1a1b1e',
                     color: '#fff',
@@ -257,13 +258,15 @@ const Tokens = () => {
         }
     };
 
-    const toggleTokenSelection = (mint: string) => {
+    const toggleTokenSelection = (token: TokenAccount) => {
         setSelectedTokens(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(mint)) {
-                newSet.delete(mint);
+            // Need to check by mint since Set comparison uses reference equality
+            const existingToken = Array.from(newSet).find(t => t.mint === token.mint);
+            if (existingToken) {
+                newSet.delete(existingToken);
             } else {
-                newSet.add(mint);
+                newSet.add(token);
             }
             return newSet;
         });
@@ -278,14 +281,40 @@ const Tokens = () => {
                         
                         {selectedTokens.size > 0 && (
                             <button
-                                onClick={() => {
-                                    // Handle bulk delete here
-                                    console.log('Deleting selected tokens:', Array.from(selectedTokens));
-                                }}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 transition-colors rounded-lg text-white"
+                                onClick={() => closeMultipleTokenAccounts(Array.from(selectedTokens))}
+                                disabled={isProcessing}
+                                className={`flex items-center gap-2 px-4 py-2 ${
+                                    isProcessing 
+                                        ? 'bg-red-600/50 cursor-not-allowed' 
+                                        : 'bg-red-600 hover:bg-red-500'
+                                } transition-colors rounded-lg text-white`}
                             >
-                                <TrashIcon className="w-5 h-5" />
-                                <span>Delete Token Accounts ({selectedTokens.size})</span>
+                                {isProcessing ? (
+                                    <>
+                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <circle 
+                                                className="opacity-25" 
+                                                cx="12" 
+                                                cy="12" 
+                                                r="10" 
+                                                stroke="currentColor" 
+                                                strokeWidth="4"
+                                                fill="none"
+                                            />
+                                            <path 
+                                                className="opacity-75" 
+                                                fill="currentColor" 
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            />
+                                        </svg>
+                                        <span>Processing...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <TrashIcon className="w-5 h-5" />
+                                        <span>Delete Token Accounts ({selectedTokens.size})</span>
+                                    </>
+                                )}
                             </button>
                         )}
                     </div>
@@ -315,7 +344,7 @@ const Tokens = () => {
                                         <tr 
                                             key={index} 
                                             className={`border-b border-gray-700/50 transition-colors duration-200
-                                                ${selectedTokens.has(token.mint) 
+                                                ${Array.from(selectedTokens).some(t => t.mint === token.mint)
                                                     ? 'bg-blue-900/20 hover:bg-blue-900/30' 
                                                     : 'hover:bg-gray-900/30'
                                                 }
@@ -378,8 +407,8 @@ const Tokens = () => {
                                             <td className="text-center py-6">
                                                 <input
                                                     type="checkbox"
-                                                    checked={selectedTokens.has(token.mint)}
-                                                    onChange={() => toggleTokenSelection(token.mint)}
+                                                    checked={Array.from(selectedTokens).some(t => t.mint === token.mint)}
+                                                    onChange={() => toggleTokenSelection(token)}
                                                     className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-700 cursor-pointer"
                                                 />
                                             </td>
@@ -414,7 +443,7 @@ const Tokens = () => {
                                         } transition-colors flex items-center gap-2`}
                                         onClick={async () => {
                                             if (deleteConfirm.token) {
-                                                await closeTokenAccount(deleteConfirm.token);
+                                                await closeMultipleTokenAccounts([deleteConfirm.token]);
                                             }
                                             setDeleteConfirm({ show: false });
                                         }}
