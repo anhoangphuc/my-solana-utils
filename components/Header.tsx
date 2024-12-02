@@ -9,7 +9,7 @@ const Header = () => {
         <Link href="/" className="text-white font-bold text-[30px] hover:text-gray-300 transition-colors">
           Solana Utils
         </Link>
-        <div>
+        <div className="flex items-center gap-8">
           <WalletConnection />
         </div>
       </div>
