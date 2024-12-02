@@ -12,6 +12,7 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 import { createCloseAccountInstruction } from '@solana/spl-token';
 import { Transaction } from '@solana/web3.js';
 import toast, { Toaster } from 'react-hot-toast';
+import { getAddressLink, getDexScreenerLink, getRaydiumLink } from '@/utils/explorer';
 
 interface TokenAccount {
     pubkey: string;
@@ -45,6 +46,38 @@ const formatPrice = (price: number) => {
     }
     
     return `$${price.toFixed(2)}`;
+};
+
+const getTotalValueColorClass = (value: number): string => {
+    if (value >= 100) return "text-purple-400"; // Highest value - Purple
+    if (value >= 50) return "text-pink-400";    // Very high value - Pink
+    if (value >= 10) return "text-yellow-400";  // High value - Yellow
+    if (value >= 5) return "text-blue-400";     // Medium value - Blue
+    if (value >= 1) return "text-cyan-400";     // Low value - Cyan
+    return "text-gray-400";                     // Very low value - Gray
+};
+
+const copyToClipboard = async (text: string) => {
+    try {
+        await navigator.clipboard.writeText(text);
+        toast.success('Token address copied to clipboard!', {
+            duration: 2000,
+            style: {
+                background: '#1a1b1e',
+                color: '#fff',
+                border: '1px solid #2d2e33'
+            },
+        });
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        toast.error('Failed to copy token address', {
+            style: {
+                background: '#1a1b1e',
+                color: '#fff',
+                border: '1px solid #2d2e33'
+            },
+        });
+    }
 };
 
 const Tokens = () => {
@@ -98,11 +131,11 @@ const Tokens = () => {
                     programId: TOKEN_PROGRAM_ID,
                 });
 
-                accounts.value.sort((a, b) => {
-                    const aAmount = Number(a.account.data.parsed.info.tokenAmount.uiAmount);
-                    const bAmount = Number(b.account.data.parsed.info.tokenAmount.uiAmount);
-                    return aAmount - bAmount;
-                });
+                // accounts.value.sort((a, b) => {
+                //     const aAmount = Number(a.account.data.parsed.info.tokenAmount.uiAmount);
+                //     const bAmount = Number(b.account.data.parsed.info.tokenAmount.uiAmount);
+                //     return aAmount - bAmount;
+                // });
 
                 const metaplex = getMetaplex();
 
@@ -139,6 +172,19 @@ const Tokens = () => {
                     })
                 );
 
+                // Sort tokens by total value (price * amount) first, then by amount
+                tokens.sort((a, b) => {
+                    const aValue = (a.price || 0) * a.amount;
+                    const bValue = (b.price || 0) * b.amount;
+
+                    // If total values are different, sort by that
+                    if (aValue !== bValue) {
+                        return aValue - bValue; // Descending order
+                    }
+                    
+                    // If total values are equal, sort by amount
+                    return a.amount - b.amount; // Ascending order
+                });
                 setTokenAccounts(tokens);
             } catch (error) {
                 console.error('Error fetching token accounts:', error);
@@ -225,7 +271,7 @@ const Tokens = () => {
                 <div>
                     Successfully closed {tokens.length} token accounts
                     <a 
-                        href={`https://solscan.io/tx/${signature}`}
+                        href={`${getAddressLink(signature)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-400 hover:text-blue-300 ml-2"
@@ -324,12 +370,11 @@ const Tokens = () => {
                             {/* Table Header */}
                             <thead>
                                 <tr className="border-b border-gray-700">
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[40%]">Token</th>
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[20%]">Amount</th>
-                                    <th className="text-right pb-4 font-medium text-gray-400 w-[15%]">Price</th>
-                                    <th className="text-right pb-4 font-medium text-gray-400 w-[15%]">Total</th>
-                                    <th className="pb-4 w-[10%]"></th>
-                                    <th className="pb-4 w-[5%]"></th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[40%] border-r border-gray-700">Token</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[20%] border-r border-gray-700 pl-4">Amount</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-gray-700 pl-4">Price</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-gray-700 pl-4">Total</th>
+                                    <th className="pb-4 w-[10%] text-center">Actions</th>
                                 </tr>
                             </thead>
 
@@ -350,7 +395,7 @@ const Tokens = () => {
                                                 }
                                             `}
                                         >
-                                            <td className="py-6">
+                                            <td className="py-6 border-r border-gray-700/50">
                                                 <div className="flex items-center gap-4">
                                                     {token.metadata?.imageUrl && (
                                                         <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
@@ -367,50 +412,86 @@ const Tokens = () => {
                                                             {token.metadata?.name || 'Unknown Token'} 
                                                             {token.metadata?.symbol && ` (${token.metadata.symbol})`}
                                                         </p>
-                                                        <p className="font-mono text-sm text-gray-400 truncate">{token.mint}</p>
+                                                        <div 
+                                                            className="relative group cursor-pointer"
+                                                            onClick={() => copyToClipboard(token.mint)}
+                                                        >
+                                                            <p className="font-mono text-sm text-gray-400 truncate">
+                                                                {token.mint}
+                                                            </p>
+                                                            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+                                                                bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 
+                                                                group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                                Click to copy token address
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
 
-                                            <td className="py-6">
-                                                <p className="font-bold text-xl">{token.amount}</p>
+                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
+                                                <a 
+                                                    href={getRaydiumLink(token.mint)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="group relative cursor-pointer"
+                                                >
+                                                    <p className="font-semibold hover:text-blue-400 transition-colors">
+                                                        {token.amount.toFixed(2)}
+                                                    </p>
+                                                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+                                                        bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 
+                                                        group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                        Swap on Raydium
+                                                    </span>
+                                                </a>
                                             </td>
 
-                                            <td className="text-right py-6">
+                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
                                                 {token.price && (
-                                                    <p className="font-semibold text-green-400 flex justify-end items-baseline">
-                                                        {formatPrice(token.price)}
-                                                    </p>
+                                                    <a 
+                                                        href={getDexScreenerLink(token.mint)}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="font-semibold hover:text-blue-400 cursor-pointer group relative"
+                                                    >
+                                                        <p>{formatPrice(token.price)}</p>
+                                                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+                                                            bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 
+                                                            group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                            View on DexScreener
+                                                        </span>
+                                                    </a>
                                                 )}
                                             </td>
 
-                                            <td className="text-right py-6">
+                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
                                                 {token.price && (
-                                                    <p className="font-semibold text-green-400 flex justify-end items-baseline">
+                                                    <p className={`font-semibold ${getTotalValueColorClass(token.price * token.amount)}`}>
                                                         {formatPrice(token.price * token.amount)}
                                                     </p>
                                                 )}
                                             </td>
 
                                             <td className="text-center py-6">
-                                                <button 
-                                                    className="p-2 hover:bg-red-900/20 rounded-full transition-colors mx-auto group relative"
-                                                    onClick={() => setDeleteConfirm({ show: true, token })}
-                                                >
-                                                    <TrashIcon className="w-5 h-5 text-red-500 hover:text-red-400" />
-                                                    <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                                        Delete Token Account and redeem SOL
-                                                    </span>
-                                                </button>
-                                            </td>
+                                                <div className="flex items-center justify-center gap-4">
+                                                    <button 
+                                                        className="p-2 hover:bg-red-900/20 rounded-full transition-colors group relative"
+                                                        onClick={() => setDeleteConfirm({ show: true, token })}
+                                                    >
+                                                        <TrashIcon className="w-5 h-5 text-red-500 hover:text-red-400" />
+                                                        <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                                            Delete Token Account and redeem SOL
+                                                        </span>
+                                                    </button>
 
-                                            <td className="text-center py-6">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={Array.from(selectedTokens).some(t => t.mint === token.mint)}
-                                                    onChange={() => toggleTokenSelection(token)}
-                                                    className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-700 cursor-pointer"
-                                                />
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={Array.from(selectedTokens).some(t => t.mint === token.mint)}
+                                                        onChange={() => toggleTokenSelection(token)}
+                                                        className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-700 cursor-pointer"
+                                                    />
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
