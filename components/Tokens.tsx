@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { getJupiterApiClient } from '@/utils/jupiterApiClient';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { TrashIcon, ArrowTopRightOnSquareIcon, ArrowPathRoundedSquareIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, ArrowTopRightOnSquareIcon, ArrowPathRoundedSquareIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
 import { createCloseAccountInstruction } from '@solana/spl-token';
 import { Transaction } from '@solana/web3.js';
 import toast, { Toaster } from 'react-hot-toast';
@@ -85,6 +85,11 @@ const SwapIcon = () => (
     <svg fill="#22C55E" width="24px" height="24px" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16 0c8.837 0 16 7.163 16 16s-7.163 16-16 16S0 24.837 0 16 7.163 0 16 0zm8.706 19.517H10.34a.59.59 0 00-.415.17l-2.838 2.815a.291.291 0 00.207.498H21.66a.59.59 0 00.415-.17l2.838-2.816a.291.291 0 00-.207-.497zm-3.046-5.292H7.294l-.068.007a.291.291 0 00-.14.49l2.84 2.816.07.06c.1.07.22.11.344.11h14.366l.068-.007a.291.291 0 00.14-.49l-2.84-2.816-.07-.06a.59.59 0 00-.344-.11zM24.706 9H10.34a.59.59 0 00-.415.17l-2.838 2.816a.291.291 0 00.207.497H21.66a.59.59 0 00.415-.17l2.838-2.815A.291.291 0 0024.706 9z" /></svg>
 );
 
+// Utility function to format numbers with commas
+const formatNumberWithCommas = (number: number): string => {
+    return number.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 const Tokens = () => {
     const { connection } = useConnection();
     const { publicKey, connected } = useWallet();
@@ -99,6 +104,8 @@ const Tokens = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [hideUnzeroBalance, setHideUnzeroBalance] = useState(false);
     const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+    const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
 
     useEffect(() => {
         if (!connected) {
@@ -143,82 +150,77 @@ const Tokens = () => {
         const fetchTokenAccounts = async () => {
             if (!publicKey) return;
             setIsLoading(true);
+            setIsMetadataLoaded(false); // Reset metadata loaded state
 
             try {
-                const accounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+                const accounts = await connection.getParsedTokenAccountsByOwner(new PublicKey("CXHBvFcwNvRuaH3pRDKv8jnACAcn7Sd6TyLZkiSWCBwi"), {
                     programId: TOKEN_PROGRAM_ID,
                 });
 
-                // accounts.value.sort((a, b) => {
-                //     const aAmount = Number(a.account.data.parsed.info.tokenAmount.uiAmount);
-                //     const bAmount = Number(b.account.data.parsed.info.tokenAmount.uiAmount);
-                //     return aAmount - bAmount;
-                // });
+                const tokens = accounts.value.map((account) => {
+                    const parsedInfo = account.account.data.parsed.info;
+                    return {
+                        mint: parsedInfo.mint,
+                        amount: parsedInfo.tokenAmount.uiAmount,
+                        decimals: parsedInfo.tokenAmount.decimals,
+                        pubkey: account.pubkey.toBase58(),
+                        metadata: {}, // Initialize metadata as empty
+                        price: null,  // Initialize price as null
+                    };
+                });
 
-                const metaplex = getMetaplex();
+                setTokenAccounts(tokens);
 
-                const tokens = await Promise.all(
-                    accounts.value.map(async (account) => {
-                        const parsedInfo = account.account.data.parsed.info;
-                        const mintAddress = new PublicKey(parsedInfo.mint);
+                // Fetch metadata and price asynchronously
+                const metadataPromises = tokens.map(async (token, index) => {
+                    const mintAddress = new PublicKey(token.mint);
+                    const metaplex = getMetaplex();
 
-                        let metadata: { name?: string, symbol?: string, uri?: string, imageUrl?: string } = {};
-                        try {
-                            const nft = await metaplex.nfts().findByMint({ mintAddress });
-                            const imageUrl = nft.uri ? await fetchMetadataUri(nft.uri) : null;
+                    let metadata: { name?: string, symbol?: string, uri?: string, imageUrl?: string } = {};
+                    try {
+                        const nft = await metaplex.nfts().findByMint({ mintAddress });
+                        const imageUrl = nft.uri ? await fetchMetadataUri(nft.uri) : null;
 
-                            metadata = {
-                                name: nft.name,
-                                symbol: nft.symbol,
-                                uri: nft.uri,
-                                imageUrl
-                            };
-                        } catch (error) {
-                            console.log(`No metadata token for token ${parsedInfo.mint}`);
-                        }
-                        console.log('Metadata:', metadata);
-
-                        if (!metadata.imageUrl) {
-                            try {
-                                console.log(`Fetching token metadata from registry for ${parsedInfo.mint}`);
-                                const response = await fetch(`/api/token-metadata?mint=${parsedInfo.mint}`);
-                                const tokenMetadata = await response.json();
-                                metadata.name = metadata.name || tokenMetadata.name;
-                                metadata.symbol = metadata.symbol || tokenMetadata.symbol;
-                                metadata.imageUrl = metadata.imageUrl || tokenMetadata.imageUrl;
-                                console.log(`Fetched token metadata from registry for ${parsedInfo.mint}:`, metadata);
-                            } catch (error) {
-                                console.log(`Error fetching token metadata from registry for ${parsedInfo.mint}:`, error);
-                            }
-                        }
-
-                        const price = await fetchTokenPrice(parsedInfo.mint);
-
-                        return {
-                            mint: parsedInfo.mint,
-                            amount: parsedInfo.tokenAmount.uiAmount,
-                            decimals: parsedInfo.tokenAmount.decimals,
-                            metadata,
-                            price,
-                            pubkey: account.pubkey.toBase58(),
+                        metadata = {
+                            name: nft.name,
+                            symbol: nft.symbol,
+                            uri: nft.uri,
+                            imageUrl
                         };
-                    })
-                );
-
-                // Sort tokens by total value (price * amount) first, then by amount
-                tokens.sort((a, b) => {
-                    const aValue = (a.price || 0) * a.amount;
-                    const bValue = (b.price || 0) * b.amount;
-
-                    // If total values are different, sort by that
-                    if (aValue !== bValue) {
-                        return aValue - bValue; // Descending order
+                    } catch (error) {
+                        console.log(`No metadata token for token ${token.mint}`);
                     }
 
-                    // If total values are equal, sort by amount
-                    return a.amount - b.amount; // Ascending order
+                    if (!metadata.imageUrl) {
+                        try {
+                            const response = await fetch(`/api/token-metadata?mint=${token.mint}`);
+                            const tokenMetadata = await response.json();
+                            metadata.name = metadata.name || tokenMetadata.name;
+                            metadata.symbol = metadata.symbol || tokenMetadata.symbol;
+                            metadata.imageUrl = metadata.imageUrl || tokenMetadata.imageUrl;
+                        } catch (error) {
+                            console.log(`Error fetching token metadata from registry for ${token.mint}:`, error);
+                        }
+                    }
+
+                    const price = await fetchTokenPrice(token.mint);
+
+                    // Update token account with metadata and price
+                    setTokenAccounts(prev => {
+                        const updatedTokens = [...prev];
+                        updatedTokens[index] = {
+                            ...updatedTokens[index],
+                            metadata,
+                            price,
+                        };
+                        return updatedTokens;
+                    });
                 });
-                setTokenAccounts(tokens);
+
+                // Wait for all metadata to be fetched
+                await Promise.all(metadataPromises);
+                setIsMetadataLoaded(true); // Set metadata loaded state to true
+
             } catch (error) {
                 console.error('Error fetching token accounts:', error);
             } finally {
@@ -358,6 +360,28 @@ const Tokens = () => {
         return (token.price || 0) * token.amount === 0;
     });
 
+    const handleSortByTotal = () => {
+        if (!isMetadataLoaded) return; // Prevent sorting if metadata is not loaded
+        setSortDirection(current => {
+            if (current === null) return 'desc';
+            if (current === 'desc') return 'asc';
+            return null;
+        });
+    };
+
+    const getSortedTokenAccounts = () => {
+        if (!sortDirection) return filteredTokenAccounts;
+
+        return [...filteredTokenAccounts].sort((a, b) => {
+            const totalA = (a.price || 0) * a.amount;
+            const totalB = (b.price || 0) * b.amount;
+            return sortDirection === 'desc' ? totalB - totalA : totalA - totalB;
+        });
+    };
+
+    // Define a placeholder image URL
+    const placeholderImageUrl = '/path/to/placeholder-image.png';
+
     return (
         <>
             <div className="min-h-[90vh] bg-[#0B0A1A] text-white">
@@ -403,7 +427,7 @@ const Tokens = () => {
                                                 hover:from-indigo-600 hover:to-blue-600 transition-all duration-200 
                                                 rounded-lg text-white font-medium"
                                         >
-                                            Delete multiple
+                                            Close multiple
                                         </button>
                                     ) : (
                                         <>
@@ -472,7 +496,25 @@ const Tokens = () => {
                                     <th className="text-left pb-4 font-medium text-gray-400 w-[35%] border-r border-[#1C1C33]">Token</th>
                                     <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4">Amount</th>
                                     <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4">Price</th>
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4">Total</th>
+                                    <th 
+                                        className={`text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4 cursor-pointer group ${isMetadataLoaded ? '' : 'opacity-50 cursor-not-allowed'}`}
+                                        onClick={handleSortByTotal}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            Total
+                                            <ArrowsUpDownIcon 
+                                                className={`w-4 h-4 transition-colors ${
+                                                    sortDirection 
+                                                        ? 'text-blue-400' 
+                                                        : 'text-gray-400 group-hover:text-gray-300'
+                                                } ${
+                                                    sortDirection === 'asc' 
+                                                        ? 'rotate-180' 
+                                                        : ''
+                                                }`}
+                                            />
+                                        </div>
+                                    </th>
                                     <th className="pb-4 w-[20%] text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -511,14 +553,14 @@ const Tokens = () => {
                                             </div>
                                         </td>
                                     </tr>
-                                ) : filteredTokenAccounts.length === 0 ? (
+                                ) : getSortedTokenAccounts().length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="text-center py-4">
                                             {hideUnzeroBalance ? "No tokens with value found" : "No tokens found"}
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredTokenAccounts.map((token, index) => (
+                                    getSortedTokenAccounts().map((token, index) => (
                                         <tr
                                             key={index}
                                             className={`border-b border-[#1C1C33]/50 transition-colors duration-200
@@ -530,16 +572,14 @@ const Tokens = () => {
                                         >
                                             <td className="py-6 border-r border-[#1C1C33]/50">
                                                 <div className="flex items-center gap-4 min-w-0">
-                                                    {token.metadata?.imageUrl && isValidUrl(token.metadata.imageUrl) && (
-                                                        <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
-                                                            <Image
-                                                                src={token.metadata.imageUrl}
-                                                                alt={token.metadata?.name || 'Token'}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        </div>
-                                                    )}
+                                                    <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
+                                                        <Image
+                                                            src={isValidUrl(token.metadata?.imageUrl || '') ? token.metadata?.imageUrl! : placeholderImageUrl}
+                                                            alt={token.metadata?.name || 'Token'}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
                                                     <div className="min-w-0 flex-1">
                                                         <p className="font-semibold truncate">
                                                             {token.metadata?.name || 'Unknown Token'}
@@ -567,7 +607,7 @@ const Tokens = () => {
                                                     className="group relative cursor-pointer"
                                                 >
                                                     <p className="font-semibold hover:text-blue-400 transition-colors">
-                                                        {token.amount.toFixed(2)}
+                                                        {formatNumberWithCommas(token.amount)}
                                                     </p>
                                                     <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
                                                         bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 
@@ -598,7 +638,7 @@ const Tokens = () => {
                                             <td className="text-left py-6 border-r border-[#1C1C33]/50 pl-4">
                                                 {token.price && (
                                                     <p className={`font-semibold ${getTotalValueColorClass(token.price * token.amount)}`}>
-                                                        {formatPrice(token.price * token.amount)}
+                                                        {formatNumberWithCommas(token.price * token.amount)}
                                                     </p>
                                                 )}
                                             </td>
@@ -611,7 +651,7 @@ const Tokens = () => {
                                                     >
                                                         <TrashIcon className="w-4 h-4 text-red-500 hover:text-red-400" />
                                                         <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                                            Delete Token Account and redeem SOL
+                                                            Close Account and redeem SOL
                                                         </span>
                                                     </button>
 
@@ -661,9 +701,9 @@ const Tokens = () => {
                 {deleteConfirm.show && deleteConfirm.token && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
                         <div className="bg-[#1C1C33] rounded-lg p-6 max-w-md w-full mx-4 border border-[#2C2C43]">
-                            <h3 className="text-xl font-semibold mb-4">Confirm Delete</h3>
+                            <h3 className="text-xl font-semibold mb-4">Confirm Close</h3>
                             <p className="text-gray-300 mb-6">
-                                Do you want to delete {deleteConfirm.token.metadata?.name || 'Unknown Token'} token and redeem SOL?
+                                Do you want to close {deleteConfirm.token.metadata?.name || 'Unknown Token'} token and redeem SOL?
                             </p>
                             <div className="flex justify-end gap-4">
                                 <button
