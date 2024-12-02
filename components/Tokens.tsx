@@ -48,6 +48,15 @@ const formatPrice = (price: number) => {
     return `$${price.toFixed(2)}`;
 };
 
+const getTotalValueColorClass = (value: number): string => {
+    if (value >= 100) return "text-purple-400"; // Highest value - Purple
+    if (value >= 50) return "text-pink-400";    // Very high value - Pink
+    if (value >= 10) return "text-yellow-400";  // High value - Yellow
+    if (value >= 5) return "text-blue-400";     // Medium value - Blue
+    if (value >= 1) return "text-cyan-400";     // Low value - Cyan
+    return "text-gray-400";                     // Very low value - Gray
+};
+
 const copyToClipboard = async (text: string) => {
     try {
         await navigator.clipboard.writeText(text);
@@ -122,11 +131,11 @@ const Tokens = () => {
                     programId: TOKEN_PROGRAM_ID,
                 });
 
-                accounts.value.sort((a, b) => {
-                    const aAmount = Number(a.account.data.parsed.info.tokenAmount.uiAmount);
-                    const bAmount = Number(b.account.data.parsed.info.tokenAmount.uiAmount);
-                    return aAmount - bAmount;
-                });
+                // accounts.value.sort((a, b) => {
+                //     const aAmount = Number(a.account.data.parsed.info.tokenAmount.uiAmount);
+                //     const bAmount = Number(b.account.data.parsed.info.tokenAmount.uiAmount);
+                //     return aAmount - bAmount;
+                // });
 
                 const metaplex = getMetaplex();
 
@@ -163,6 +172,19 @@ const Tokens = () => {
                     })
                 );
 
+                // Sort tokens by total value (price * amount) first, then by amount
+                tokens.sort((a, b) => {
+                    const aValue = (a.price || 0) * a.amount;
+                    const bValue = (b.price || 0) * b.amount;
+
+                    // If total values are different, sort by that
+                    if (aValue !== bValue) {
+                        return aValue - bValue; // Descending order
+                    }
+                    
+                    // If total values are equal, sort by amount
+                    return a.amount - b.amount; // Ascending order
+                });
                 setTokenAccounts(tokens);
             } catch (error) {
                 console.error('Error fetching token accounts:', error);
@@ -414,7 +436,7 @@ const Tokens = () => {
                                                     rel="noopener noreferrer"
                                                     className="group relative cursor-pointer"
                                                 >
-                                                    <p className="font-bold text-xl hover:text-blue-400 transition-colors">
+                                                    <p className="font-semibold hover:text-blue-400 transition-colors">
                                                         {token.amount.toFixed(2)}
                                                     </p>
                                                     <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
@@ -431,7 +453,7 @@ const Tokens = () => {
                                                         href={getDexScreenerLink(token.mint)}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="font-semibold text-green-400 hover:text-green-300 cursor-pointer group relative"
+                                                        className="font-semibold hover:text-blue-400 cursor-pointer group relative"
                                                     >
                                                         <p>{formatPrice(token.price)}</p>
                                                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
@@ -445,7 +467,7 @@ const Tokens = () => {
 
                                             <td className="text-left py-6 border-r border-gray-700/50 pl-4">
                                                 {token.price && (
-                                                    <p className="font-semibold text-green-400">
+                                                    <p className={`font-semibold ${getTotalValueColorClass(token.price * token.amount)}`}>
                                                         {formatPrice(token.price * token.amount)}
                                                     </p>
                                                 )}
