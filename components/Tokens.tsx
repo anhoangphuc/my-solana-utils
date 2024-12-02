@@ -14,6 +14,7 @@ import { Transaction } from '@solana/web3.js';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface TokenAccount {
+    pubkey: string;
     mint: string;
     amount: number;
     decimals: number;
@@ -56,6 +57,7 @@ const Tokens = () => {
     }>({ show: false });
     const wallet = useWallet();
     const [isProcessing, setIsProcessing] = useState(false);
+    const [selectedTokens, setSelectedTokens] = useState<Set<string>>(new Set());
 
     const fetchMetadataUri = async (uri: string) => {
         try {
@@ -131,7 +133,8 @@ const Tokens = () => {
                             amount: parsedInfo.tokenAmount.uiAmount,
                             decimals: parsedInfo.tokenAmount.decimals,
                             metadata,
-                            price
+                            price,
+                            pubkey: account.pubkey.toBase58(),
                         };
                     })
                 );
@@ -154,16 +157,16 @@ const Tokens = () => {
         setIsProcessing(true);
         try {
             // Find the token account address
-            const accounts = await connection.getParsedTokenAccountsByOwner(wallet.publicKey, {
-                mint: new PublicKey(token.mint),
-            });
+            // const accounts = await connection.getParsedTokenAccountsByOwner(wallet.publicKey, {
+            //     mint: new PublicKey(token.mint),
+            // });
 
-            if (accounts.value.length === 0) {
-                console.error('Token account not found');
-                return;
-            }
+            // if (accounts.value.length === 0) {
+            //     console.error('Token account not found');
+            //     return;
+            // }
 
-            const tokenAccountAddress = accounts.value[0].pubkey;
+            const tokenAccountAddress = new PublicKey(token.pubkey);
 
             // Create the close account instruction
             const closeInstruction = createCloseAccountInstruction(
@@ -254,11 +257,38 @@ const Tokens = () => {
         }
     };
 
+    const toggleTokenSelection = (mint: string) => {
+        setSelectedTokens(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(mint)) {
+                newSet.delete(mint);
+            } else {
+                newSet.add(mint);
+            }
+            return newSet;
+        });
+    };
+
     return (
         <>
             <div className="min-h-[90vh] bg-black text-white">
                 <div className="max-w-[1440px] mx-auto p-8">
-                    <h2 className="text-2xl font-bold mb-6">Your Token Accounts</h2>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold">Your Token Accounts</h2>
+                        
+                        {selectedTokens.size > 0 && (
+                            <button
+                                onClick={() => {
+                                    // Handle bulk delete here
+                                    console.log('Deleting selected tokens:', Array.from(selectedTokens));
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 transition-colors rounded-lg text-white"
+                            >
+                                <TrashIcon className="w-5 h-5" />
+                                <span>Delete Token Accounts ({selectedTokens.size})</span>
+                            </button>
+                        )}
+                    </div>
                     
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -270,6 +300,7 @@ const Tokens = () => {
                                     <th className="text-right pb-4 font-medium text-gray-400 w-[15%]">Price</th>
                                     <th className="text-right pb-4 font-medium text-gray-400 w-[15%]">Total</th>
                                     <th className="pb-4 w-[10%]"></th>
+                                    <th className="pb-4 w-[5%]"></th>
                                 </tr>
                             </thead>
 
@@ -281,7 +312,15 @@ const Tokens = () => {
                                     </tr>
                                 ) : (
                                     tokenAccounts.map((token, index) => (
-                                        <tr key={index} className="border-b border-gray-700/50 hover:bg-gray-900/30">
+                                        <tr 
+                                            key={index} 
+                                            className={`border-b border-gray-700/50 transition-colors duration-200
+                                                ${selectedTokens.has(token.mint) 
+                                                    ? 'bg-blue-900/20 hover:bg-blue-900/30' 
+                                                    : 'hover:bg-gray-900/30'
+                                                }
+                                            `}
+                                        >
                                             <td className="py-6">
                                                 <div className="flex items-center gap-4">
                                                     {token.metadata?.imageUrl && (
@@ -334,6 +373,15 @@ const Tokens = () => {
                                                         Delete Token Account and redeem SOL
                                                     </span>
                                                 </button>
+                                            </td>
+
+                                            <td className="text-center py-6">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedTokens.has(token.mint)}
+                                                    onChange={() => toggleTokenSelection(token.mint)}
+                                                    className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-700 cursor-pointer"
+                                                />
                                             </td>
                                         </tr>
                                     ))
