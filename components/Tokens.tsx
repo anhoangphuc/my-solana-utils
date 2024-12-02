@@ -13,6 +13,7 @@ import { createCloseAccountInstruction } from '@solana/spl-token';
 import { Transaction } from '@solana/web3.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { getAddressLink, getDexScreenerLink, getRaydiumLink } from '@/utils/explorer';
+import { isValidUrl } from '@/utils/helpers';
 
 interface TokenAccount {
     pubkey: string;
@@ -144,7 +145,7 @@ const Tokens = () => {
                         const parsedInfo = account.account.data.parsed.info;
                         const mintAddress = new PublicKey(parsedInfo.mint);
 
-                        let metadata = {};
+                        let metadata: { name?: string, symbol?: string, uri?: string, imageUrl?: string } = {};
                         try {
                             const nft = await metaplex.nfts().findByMint({ mintAddress });
                             const imageUrl = nft.uri ? await fetchMetadataUri(nft.uri) : null;
@@ -156,7 +157,22 @@ const Tokens = () => {
                                 imageUrl
                             };
                         } catch (error) {
-                            console.log(`No metadata for token ${parsedInfo.mint}`);
+                            console.log(`No metadata token for token ${parsedInfo.mint}`);
+                        }
+                        console.log('Metadata:', metadata);
+
+                        if (!metadata.imageUrl) {
+                            try {
+                                console.log(`Fetching token metadata from registry for ${parsedInfo.mint}`);
+                                const response = await fetch(`/api/token-metadata?mint=${parsedInfo.mint}`);
+                                const tokenMetadata = await response.json();
+                                metadata.name = metadata.name || tokenMetadata.name;
+                                metadata.symbol = metadata.symbol || tokenMetadata.symbol;
+                                metadata.imageUrl = metadata.imageUrl || tokenMetadata.imageUrl;
+                                console.log(`Fetched token metadata from registry for ${parsedInfo.mint}:`, metadata);
+                            } catch (error) {
+                                console.log(`Error fetching token metadata from registry for ${parsedInfo.mint}:`, error);
+                            }
                         }
 
                         const price = await fetchTokenPrice(parsedInfo.mint);
@@ -403,15 +419,17 @@ const Tokens = () => {
                                         >
                                             <td className="py-6 border-r border-gray-700/50">
                                                 <div className="flex items-center gap-4">
-                                                    {token.metadata?.imageUrl && (
-                                                        <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
-                                                            <Image 
-                                                                src={token.metadata.imageUrl}
-                                                                alt={token.metadata?.name || 'Token'}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        </div>
+                                                    {token.metadata?.imageUrl && isValidUrl(token.metadata.imageUrl) && (
+                                                        <>
+                                                            <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
+                                                                <Image 
+                                                                    src={token.metadata.imageUrl}
+                                                                    alt={token.metadata?.name || 'Token'}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                />
+                                                            </div>
+                                                        </>
                                                     )}
                                                     <div className="min-w-0">
                                                         <p className="font-semibold truncate">
