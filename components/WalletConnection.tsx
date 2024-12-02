@@ -74,31 +74,30 @@ const WalletConnection = () => {
           {!publicKey ? (
             <>
               <DialogTrigger asChild>
-                <Button className="bg-black text-[20px] md:text-[30px] text-white ring-black ring-2 h-[40px] md:h-[60px] border-2 border-white font-slackey z-50">
-                  {connecting ? "connecting..." : "Connect Wallet"}
+                <Button className="bg-[#1C1C33] text-sm md:text-base text-white h-[36px] md:h-[40px] 
+                  border border-[#2C2C43] hover:bg-[#2C2C43] transition-colors z-50">
+                  {connecting ? "Connecting..." : "Select Wallet"}
                 </Button>
               </DialogTrigger>
             </>
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="flex gap-2 bg-black text-[20px] md:text-[30px] text-white ring-black ring-2 h-[40px]  md:h-[60px] border-2 border-white font-slackey z-50">
-                  <div className="">
-                    <div className=" truncate md:w-[150px] w-[100px]  ">
-                      {publicKey.toBase58()}
-                    </div>
+                <Button className="flex gap-2 items-center bg-[#1C1C33] text-sm md:text-base text-white 
+                  h-[36px] md:h-[40px] border border-[#2C2C43] hover:bg-[#2C2C43] transition-colors z-50">
+                  <div className="truncate md:w-[120px] w-[80px]">
+                    {publicKey.toBase58()}
                   </div>
-                  {balance ? (
-                    <div>{toFixed(balance, 2)} SOL</div>
-                  ) : (
-                    <div>0 SOL</div>
-                  )}
+                  <div className="text-gray-300">
+                    {balance ? `${toFixed(balance, 2)} SOL` : "0 SOL"}
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[300px] bg-black hover:bg-black">
+              <DropdownMenuContent className="w-[200px] bg-[#1C1C33] border border-[#2C2C43]">
                 <DropdownMenuItem className="flex justify-center">
                   <Button
-                    className="bg-[#ff5555] z-50 text-[20px]  text-white  border-2 border-white font-slackey"
+                    className="bg-gradient-to-r from-red-600 to-red-500 text-sm text-white 
+                      hover:bg-opacity-80 transition-all duration-200"
                     onClick={handleDisconnect}
                   >
                     Disconnect
@@ -109,33 +108,31 @@ const WalletConnection = () => {
           )}
 
           <DialogContent
-            className="max-w-[450px] bg-black "
+            className="max-w-[400px] bg-[#1C1C33] border border-[#2C2C43]"
             style={{
-              borderRadius: "30px",
+              borderRadius: "12px",
             }}
           >
-            <DialogTitle>Connect Wallet</DialogTitle>
-            <div className="flex w-full justify-center items-center ">
-              <div className="flex flex-col justify-start items-center space-y-5  w-[300px] md:w-[400px] overflow-y-auto ">
+            <DialogTitle className="text-lg font-medium">Connect Wallet</DialogTitle>
+            <div className="flex w-full justify-center items-center">
+              <div className="flex flex-col justify-start items-center space-y-3 w-full max-h-[300px] overflow-y-auto">
                 {wallets.map((wallet) => (
                   <Button
                     key={wallet.adapter.name}
-                    //onClick={() => select(wallet.adapter.name)}
                     onClick={() => handleWalletSelect(wallet.adapter.name)}
                     variant={"ghost"}
-                    className=" h-[40px] hover:bg-transparent hover:text-white text-[20px] text-white font-slackey flex w-full justify-center items-center "
+                    className="h-[40px] w-full hover:bg-[#2C2C43] text-sm text-white 
+                      flex justify-start items-center px-4 transition-colors"
                   >
-                    <div className="flex">
+                    <div className="flex items-center gap-3 w-full">
                       <Image
                         src={wallet.adapter.icon}
                         alt={wallet.adapter.name}
-                        height={30}
-                        width={30}
-                        className="mr-5 "
+                        height={24}
+                        width={24}
                       />
-                    </div>
-                    <div className="font-slackey text-white wallet-name text-[20px]">
-                      {wallet.adapter.name}
+                      <span className="flex-1">{wallet.adapter.name}</span>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   </Button>
                 ))}

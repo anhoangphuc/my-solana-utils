@@ -340,12 +340,14 @@ const Tokens = () => {
 
     return (
         <>
-            <div className="min-h-[90vh] bg-black text-white">
-                {/* Fixed header section */}
-                <div className="fixed top-[10vh] left-0 right-0 bg-black z-40 border-b border-gray-700">
+            <div className="min-h-[90vh] bg-[#0B0A1A] text-white">
+                {/* Fixed header section - darker gradient background */}
+                <div className="fixed top-[10vh] left-0 right-0 bg-gradient-to-b from-[#0B0A1A] to-[#070B19] z-40 border-b border-[#1C1C33]">
                     <div className="max-w-[1440px] mx-auto px-8">
                         <div className="flex justify-between items-center py-6">
-                            <h2 className="text-2xl font-bold">Your Token Accounts</h2>
+                            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
+                                Your Token Accounts
+                            </h2>
                             
                             {selectedTokens.size > 0 && (
                                 <button
@@ -353,9 +355,9 @@ const Tokens = () => {
                                     disabled={isProcessing}
                                     className={`flex items-center gap-2 px-4 py-2 ${
                                         isProcessing 
-                                            ? 'bg-red-600/50 cursor-not-allowed' 
-                                            : 'bg-red-600 hover:bg-red-500'
-                                    } transition-colors rounded-lg text-white`}
+                                            ? 'bg-opacity-50 cursor-not-allowed' 
+                                            : 'hover:bg-opacity-80'
+                                    } bg-gradient-to-r from-indigo-600 to-blue-600 transition-all duration-200 rounded-lg text-white`}
                                 >
                                     {isProcessing ? (
                                         <>
@@ -389,17 +391,17 @@ const Tokens = () => {
                     </div>
                 </div>
 
-                {/* Table content with padding for fixed header */}
+                {/* Table content */}
                 <div className="pt-[calc(10vh+80px)] max-w-[1440px] mx-auto px-8">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             {/* Table Header */}
                             <thead>
-                                <tr className="border-b border-gray-700">
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[40%] border-r border-gray-700">Token</th>
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[20%] border-r border-gray-700 pl-4">Amount</th>
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-gray-700 pl-4">Price</th>
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-gray-700 pl-4">Total</th>
+                                <tr className="border-b border-[#1C1C33]">
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[40%] border-r border-[#1C1C33]">Token</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[20%] border-r border-[#1C1C33] pl-4">Amount</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4">Price</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4">Total</th>
                                     <th className="pb-4 w-[10%] text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -438,14 +440,14 @@ const Tokens = () => {
                                     tokenAccounts.map((token, index) => (
                                         <tr 
                                             key={index} 
-                                            className={`border-b border-gray-700/50 transition-colors duration-200
+                                            className={`border-b border-[#1C1C33]/50 transition-colors duration-200
                                                 ${Array.from(selectedTokens).some(t => t.mint === token.mint)
-                                                    ? 'bg-blue-900/20 hover:bg-blue-900/30' 
-                                                    : 'hover:bg-gray-900/30'
+                                                    ? 'bg-[#1C1C33]/30 hover:bg-[#1C1C33]/40' 
+                                                    : 'hover:bg-[#1C1C33]/20'
                                                 }
                                             `}
                                         >
-                                            <td className="py-6 border-r border-gray-700/50">
+                                            <td className="py-6 border-r border-[#1C1C33]/50">
                                                 <div className="flex items-center gap-4">
                                                     {token.metadata?.imageUrl && isValidUrl(token.metadata.imageUrl) && (
                                                         <>
@@ -481,7 +483,7 @@ const Tokens = () => {
                                                 </div>
                                             </td>
 
-                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
+                                            <td className="text-left py-6 border-r border-[#1C1C33]/50 pl-4">
                                                 <a 
                                                     href={getRaydiumLink(token.mint)}
                                                     target="_blank"
@@ -499,7 +501,7 @@ const Tokens = () => {
                                                 </a>
                                             </td>
 
-                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
+                                            <td className="text-left py-6 border-r border-[#1C1C33]/50 pl-4">
                                                 {token.price && (
                                                     <a 
                                                         href={getDexScreenerLink(token.mint)}
@@ -517,7 +519,7 @@ const Tokens = () => {
                                                 )}
                                             </td>
 
-                                            <td className="text-left py-6 border-r border-gray-700/50 pl-4">
+                                            <td className="text-left py-6 border-r border-[#1C1C33]/50 pl-4">
                                                 {token.price && (
                                                     <p className={`font-semibold ${getTotalValueColorClass(token.price * token.amount)}`}>
                                                         {formatPrice(token.price * token.amount)}
@@ -563,66 +565,66 @@ const Tokens = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
 
-                    {/* Update Delete Confirmation Modal */}
-                    {deleteConfirm.show && deleteConfirm.token && (
-                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-                                <h3 className="text-xl font-semibold mb-4">Confirm Delete</h3>
-                                <p className="text-gray-300 mb-6">
-                                    Do you want to delete {deleteConfirm.token.metadata?.name || 'Unknown Token'} token and redeem SOL?
-                                </p>
-                                <div className="flex justify-end gap-4">
-                                    <button
-                                        className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
-                                        onClick={() => setDeleteConfirm({ show: false })}
-                                        disabled={isProcessing}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        className={`px-4 py-2 rounded ${
-                                            isProcessing 
-                                                ? 'bg-red-600/50 cursor-not-allowed' 
-                                                : 'bg-red-600 hover:bg-red-500'
-                                        } transition-colors flex items-center gap-2`}
-                                        onClick={async () => {
-                                            if (deleteConfirm.token) {
-                                                await closeMultipleTokenAccounts([deleteConfirm.token]);
-                                            }
-                                            setDeleteConfirm({ show: false });
-                                        }}
-                                        disabled={isProcessing}
-                                    >
-                                        {isProcessing ? (
-                                            <>
-                                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                                    <circle 
-                                                        className="opacity-25" 
-                                                        cx="12" 
-                                                        cy="12" 
-                                                        r="10" 
-                                                        stroke="currentColor" 
-                                                        strokeWidth="4"
-                                                        fill="none"
-                                                    />
-                                                    <path 
-                                                        className="opacity-75" 
-                                                        fill="currentColor" 
-                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                    />
-                                                </svg>
-                                                Processing...
-                                            </>
-                                        ) : (
-                                            'Delete'
-                                        )}
-                                    </button>
-                                </div>
+                {/* Modal with updated style */}
+                {deleteConfirm.show && deleteConfirm.token && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                        <div className="bg-[#1C1C33] rounded-lg p-6 max-w-md w-full mx-4 border border-[#2C2C43]">
+                            <h3 className="text-xl font-semibold mb-4">Confirm Delete</h3>
+                            <p className="text-gray-300 mb-6">
+                                Do you want to delete {deleteConfirm.token.metadata?.name || 'Unknown Token'} token and redeem SOL?
+                            </p>
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+                                    onClick={() => setDeleteConfirm({ show: false })}
+                                    disabled={isProcessing}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className={`px-4 py-2 rounded ${
+                                        isProcessing 
+                                            ? 'bg-opacity-50 cursor-not-allowed' 
+                                            : 'hover:bg-opacity-80'
+                                    } bg-gradient-to-r from-indigo-600 to-blue-600 transition-all duration-200`}
+                                    onClick={async () => {
+                                        if (deleteConfirm.token) {
+                                            await closeMultipleTokenAccounts([deleteConfirm.token]);
+                                        }
+                                        setDeleteConfirm({ show: false });
+                                    }}
+                                    disabled={isProcessing}
+                                >
+                                    {isProcessing ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                                <circle 
+                                                    className="opacity-25" 
+                                                    cx="12" 
+                                                    cy="12" 
+                                                    r="10" 
+                                                    stroke="currentColor" 
+                                                    strokeWidth="4"
+                                                    fill="none"
+                                                />
+                                                <path 
+                                                    className="opacity-75" 
+                                                    fill="currentColor" 
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                />
+                                            </svg>
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        'Delete'
+                                    )}
+                                </button>
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
             {/* Add Toaster component */}
             <Toaster position="bottom-right" />

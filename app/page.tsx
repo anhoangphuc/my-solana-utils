@@ -3,14 +3,16 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-[90vh] bg-black text-white relative">
+    <div className="min-h-[90vh] bg-transparent text-white">
       <div className="max-w-4xl mx-auto p-8">
-        <h1 className="text-4xl font-bold mb-6">Solana Tools for Everyone</h1>
+        <h1 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
+          Solana Tools for Everyone
+        </h1>
         
         <div className="space-y-8">
-          <div className="bg-gray-800/50 rounded-lg p-6 hover:bg-gray-800/70 transition-colors">
-            <Link href="/tokens" className="block">
-              <h2 className="text-2xl font-semibold mb-3 text-blue-400">Token Account Manager</h2>
+          <div className="glass-card hover:gradient-border transition-all duration-300">
+            <Link href="/tokens" className="block p-6">
+              <h2 className="text-2xl font-semibold mb-3 text-indigo-400">Token Account Manager</h2>
               <p className="text-gray-300">
                 Efficiently manage your Solana token accounts. View token balances, prices, and total values. 
                 Clean up unused token accounts to recover SOL, and access quick links to trade on Raydium or 
@@ -26,8 +28,8 @@ export default function Home() {
       {/* Fixed About Link */}
       <Link 
         href="/about" 
-        className="fixed bottom-6 right-6 px-4 py-2 bg-gray-800/80 hover:bg-gray-700/80 
-          transition-colors rounded-lg text-white font-medium backdrop-blur-sm
+        className="fixed bottom-6 right-6 px-4 py-2 glass-card hover:gradient-border
+          transition-all duration-300 text-white font-medium
           flex items-center gap-2"
       >
         <span>About</span>
