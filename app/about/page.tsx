@@ -36,7 +36,7 @@ export default function About() {
             <div className="space-y-4">
               <p className="text-gray-300">
                 Have questions, suggestions, found a bug, or have any requests about tools? We also build custom tools for custom needs for any domain.
-                We'd love to hear from you!
+                We&apos;d love to hear from you!
               </p>
               
               <div className="space-y-2">

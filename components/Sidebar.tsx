@@ -55,7 +55,7 @@ const Sidebar = () => {
                     </div>
 
                     {/* Collapse Button */}
-                    <button
+                    {/* <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
                         className="flex items-center justify-center p-4 text-gray-400 hover:text-white border-t border-[#1C1C33]"
                     >
@@ -64,7 +64,7 @@ const Sidebar = () => {
                         ) : (
                             <ChevronLeftIcon className="w-5 h-5" />
                         )}
-                    </button>
+                    </button> */}
                 </div>
             </div>
         </>

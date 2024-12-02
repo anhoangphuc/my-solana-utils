@@ -87,7 +87,7 @@ const SwapIcon = () => (
 
 const Tokens = () => {
     const { connection } = useConnection();
-    const { publicKey } = useWallet();
+    const { publicKey, connected } = useWallet();
     const [tokenAccounts, setTokenAccounts] = useState<TokenAccount[]>([]);
     const [deleteConfirm, setDeleteConfirm] = useState<{
         show: boolean;
@@ -99,6 +99,15 @@ const Tokens = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [hideUnzeroBalance, setHideUnzeroBalance] = useState(false);
     const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+    useEffect(() => {
+        if (!connected) {
+            setTokenAccounts([]);
+            setSelectedTokens(new Set());
+            setIsSelectionMode(false);
+            setDeleteConfirm({ show: false });
+        }
+    }, [connected]);
 
     const fetchMetadataUri = async (uri: string) => {
         try {
@@ -470,7 +479,15 @@ const Tokens = () => {
 
                             {/* Table Body */}
                             <tbody>
-                                {isLoading ? (
+                                {!connected ? (
+                                    <tr>
+                                        <td colSpan={5} className="text-center py-12">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <p className="text-gray-400 text-lg">Connect your wallet to view token accounts</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : isLoading ? (
                                     <tr>
                                         <td colSpan={5} className="text-center py-12">
                                             <div className="flex flex-col items-center gap-4">
