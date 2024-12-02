@@ -12,7 +12,7 @@ import { TrashIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outlin
 import { createCloseAccountInstruction } from '@solana/spl-token';
 import { Transaction } from '@solana/web3.js';
 import toast, { Toaster } from 'react-hot-toast';
-import { getAddressLink, getDexScreenerLink, getRaydiumLink } from '@/utils/explorer';
+import { getAddressLink, getDexScreenerLink, getRaydiumLink, getTxLink } from '@/utils/explorer';
 import { isValidUrl } from '@/utils/helpers';
 
 interface TokenAccount {
@@ -287,7 +287,7 @@ const Tokens = () => {
                 <div>
                     Successfully closed {tokens.length} token accounts
                     <a 
-                        href={`${getAddressLink(signature)}`}
+                        href={`${getTxLink(signature)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-400 hover:text-blue-300 ml-2"
