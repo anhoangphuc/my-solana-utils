@@ -321,50 +321,56 @@ const Tokens = () => {
     return (
         <>
             <div className="min-h-[90vh] bg-black text-white">
-                <div className="max-w-[1440px] mx-auto p-8">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold">Your Token Accounts</h2>
-                        
-                        {selectedTokens.size > 0 && (
-                            <button
-                                onClick={() => closeMultipleTokenAccounts(Array.from(selectedTokens))}
-                                disabled={isProcessing}
-                                className={`flex items-center gap-2 px-4 py-2 ${
-                                    isProcessing 
-                                        ? 'bg-red-600/50 cursor-not-allowed' 
-                                        : 'bg-red-600 hover:bg-red-500'
-                                } transition-colors rounded-lg text-white`}
-                            >
-                                {isProcessing ? (
-                                    <>
-                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                            <circle 
-                                                className="opacity-25" 
-                                                cx="12" 
-                                                cy="12" 
-                                                r="10" 
-                                                stroke="currentColor" 
-                                                strokeWidth="4"
-                                                fill="none"
-                                            />
-                                            <path 
-                                                className="opacity-75" 
-                                                fill="currentColor" 
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            />
-                                        </svg>
-                                        <span>Processing...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <TrashIcon className="w-5 h-5" />
-                                        <span>Delete Token Accounts ({selectedTokens.size})</span>
-                                    </>
-                                )}
-                            </button>
-                        )}
+                {/* Fixed header section */}
+                <div className="fixed top-[10vh] left-0 right-0 bg-black z-40 border-b border-gray-700">
+                    <div className="max-w-[1440px] mx-auto px-8">
+                        <div className="flex justify-between items-center py-6">
+                            <h2 className="text-2xl font-bold">Your Token Accounts</h2>
+                            
+                            {selectedTokens.size > 0 && (
+                                <button
+                                    onClick={() => closeMultipleTokenAccounts(Array.from(selectedTokens))}
+                                    disabled={isProcessing}
+                                    className={`flex items-center gap-2 px-4 py-2 ${
+                                        isProcessing 
+                                            ? 'bg-red-600/50 cursor-not-allowed' 
+                                            : 'bg-red-600 hover:bg-red-500'
+                                    } transition-colors rounded-lg text-white`}
+                                >
+                                    {isProcessing ? (
+                                        <>
+                                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                <circle 
+                                                    className="opacity-25" 
+                                                    cx="12" 
+                                                    cy="12" 
+                                                    r="10" 
+                                                    stroke="currentColor" 
+                                                    strokeWidth="4"
+                                                    fill="none"
+                                                />
+                                                <path 
+                                                    className="opacity-75" 
+                                                    fill="currentColor" 
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                />
+                                            </svg>
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <TrashIcon className="w-5 h-5" />
+                                            <span>Delete Token Accounts ({selectedTokens.size})</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    
+                </div>
+
+                {/* Table content with padding for fixed header */}
+                <div className="pt-[calc(10vh+80px)] max-w-[1440px] mx-auto px-8">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             {/* Table Header */}
