@@ -455,15 +455,15 @@ const Tokens = () => {
                 {/* Table content */}
                 <div className="pt-[calc(10vh+80px)] max-w-[1440px] mx-auto px-8">
                     <div className="overflow-x-auto">
-                        <table className="w-full">
+                        <table className="w-full table-fixed">
                             {/* Table Header */}
                             <thead>
                                 <tr className="border-b border-[#1C1C33]">
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[40%] border-r border-[#1C1C33]">Token</th>
-                                    <th className="text-left pb-4 font-medium text-gray-400 w-[20%] border-r border-[#1C1C33] pl-4">Amount</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[35%] border-r border-[#1C1C33]">Token</th>
+                                    <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4">Amount</th>
                                     <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4">Price</th>
                                     <th className="text-left pb-4 font-medium text-gray-400 w-[15%] border-r border-[#1C1C33] pl-4">Total</th>
-                                    <th className="pb-4 w-[10%] text-center">Actions</th>
+                                    <th className="pb-4 w-[20%] text-center">Actions</th>
                                 </tr>
                             </thead>
 
@@ -511,28 +511,23 @@ const Tokens = () => {
                                             `}
                                         >
                                             <td className="py-6 border-r border-[#1C1C33]/50">
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-4 min-w-0">
                                                     {token.metadata?.imageUrl && isValidUrl(token.metadata.imageUrl) && (
-                                                        <>
-                                                            <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
-                                                                <Image
-                                                                    src={token.metadata.imageUrl}
-                                                                    alt={token.metadata?.name || 'Token'}
-                                                                    fill
-                                                                    className="object-cover"
-                                                                />
-                                                            </div>
-                                                        </>
+                                                        <div className="w-12 h-12 relative rounded-full overflow-hidden flex-shrink-0">
+                                                            <Image
+                                                                src={token.metadata.imageUrl}
+                                                                alt={token.metadata?.name || 'Token'}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        </div>
                                                     )}
-                                                    <div className="min-w-0">
+                                                    <div className="min-w-0 flex-1">
                                                         <p className="font-semibold truncate">
                                                             {token.metadata?.name || 'Unknown Token'}
                                                             {token.metadata?.symbol && ` (${token.metadata.symbol})`}
                                                         </p>
-                                                        <div
-                                                            className="relative group cursor-pointer"
-                                                            onClick={() => copyToClipboard(token.mint)}
-                                                        >
+                                                        <div className="relative group cursor-pointer truncate">
                                                             <p className="font-mono text-sm text-gray-400 truncate">
                                                                 {token.mint}
                                                             </p>
@@ -591,12 +586,12 @@ const Tokens = () => {
                                             </td>
 
                                             <td className="text-center py-6">
-                                                <div className="flex items-center justify-center gap-4">
+                                                <div className="flex items-center justify-center gap-2">
                                                     <button
-                                                        className="p-2 hover:bg-red-900/20 rounded-full transition-colors group relative"
+                                                        className="p-1.5 hover:bg-red-900/20 rounded-full transition-colors group relative"
                                                         onClick={() => setDeleteConfirm({ show: true, token })}
                                                     >
-                                                        <TrashIcon className="w-5 h-5 text-red-500 hover:text-red-400" />
+                                                        <TrashIcon className="w-4 h-4 text-red-500 hover:text-red-400" />
                                                         <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                                                             Delete Token Account and redeem SOL
                                                         </span>
@@ -606,9 +601,9 @@ const Tokens = () => {
                                                         href={getAddressLink(token.mint)}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="p-2 hover:bg-blue-900/20 rounded-full transition-colors group relative"
+                                                        className="p-1.5 hover:bg-blue-900/20 rounded-full transition-colors group relative"
                                                     >
-                                                        <ArrowTopRightOnSquareIcon className="w-5 h-5 text-blue-400 hover:text-blue-300" />
+                                                        <ArrowTopRightOnSquareIcon className="w-4 h-4 text-blue-400 hover:text-blue-300" />
                                                         <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                                                             View on Solana Explorer
                                                         </span>
@@ -618,7 +613,7 @@ const Tokens = () => {
                                                         href={getRaydiumLink(token.mint)}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="p-2 hover:bg-green-900/20 rounded-full transition-colors group relative"
+                                                        className="p-1.5 hover:bg-green-900/20 rounded-full transition-colors group relative"
                                                     >
                                                         <SwapIcon />
                                                         <span className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
